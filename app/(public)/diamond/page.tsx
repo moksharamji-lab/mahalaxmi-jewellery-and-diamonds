@@ -78,12 +78,16 @@ export default async function DiamondPage({
       item.collection === "Diamond"
   );
 
+  const selectedCategory = activeCategories.find(
+    (item) => item.id === category
+  );
+
   // =====================================================
   // WHATSAPP
   // =====================================================
 
-  const whatsappMessage = category
-    ? `Hello, I am interested in your Diamond ${category} Jewellery Collection.`
+  const whatsappMessage = selectedCategory
+    ? `Hello, I am interested in your Diamond ${selectedCategory.name} Jewellery Collection.`
     : "Hello, I would like to know more about your Diamond Jewellery Collection.";
 
   const whatsappUrl = store?.whatsapp
@@ -101,12 +105,13 @@ export default async function DiamondPage({
 
       <section className="border-b border-[#e5ded2] bg-[#f1ece3]">
         <div className="mx-auto max-w-[1400px] px-5 sm:px-8 lg:px-10">
+
           <div className="flex min-h-[460px] items-center justify-center py-20 sm:min-h-[520px]">
+
             <div className="max-w-3xl text-center">
 
-              {/* Label */}
-
               <div className="flex items-center justify-center gap-3 sm:gap-4">
+
                 <span className="h-px w-8 bg-[#b08d57] sm:w-14" />
 
                 <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#b08d57] sm:text-xs sm:tracking-[0.4em]">
@@ -114,19 +119,18 @@ export default async function DiamondPage({
                 </p>
 
                 <span className="h-px w-8 bg-[#b08d57] sm:w-14" />
+
               </div>
 
-              {/* Heading */}
-
               <h1 className="mt-7 font-display text-5xl font-normal leading-[1.05] tracking-[-0.03em] text-[#1c1a17] sm:text-6xl md:text-7xl">
+
                 Brilliant Diamonds
 
                 <span className="mt-2 block text-[#b08d57]">
                   Timelessly Crafted
                 </span>
-              </h1>
 
-              {/* Description */}
+              </h1>
 
               <p className="mx-auto mt-7 max-w-2xl text-sm leading-7 text-[#777169] sm:text-base sm:leading-8">
                 Explore refined diamond jewellery designed
@@ -134,19 +138,18 @@ export default async function DiamondPage({
                 with brilliance and elegance.
               </p>
 
-              {/* Active category */}
-
-              {category && (
+              {selectedCategory && (
                 <div className="mt-7">
+
                   <span className="inline-flex items-center border border-[#b08d57] bg-[#f8f5ef] px-4 py-2 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#b08d57] sm:text-[10px]">
-                    Showing: {category}
+                    Showing: {selectedCategory.name}
                   </span>
+
                 </div>
               )}
 
-              {/* Decorative */}
-
               <div className="mx-auto mt-8 flex items-center justify-center gap-3">
+
                 <span className="h-px w-10 bg-[#e5ded2]" />
 
                 <span className="text-sm text-[#b08d57]">
@@ -154,10 +157,13 @@ export default async function DiamondPage({
                 </span>
 
                 <span className="h-px w-10 bg-[#e5ded2]" />
+
               </div>
 
             </div>
+
           </div>
+
         </div>
       </section>
 
@@ -166,6 +172,7 @@ export default async function DiamondPage({
       ===================================================== */}
 
       <section className="border-b border-[#e5ded2] bg-[#f8f5ef]">
+
         <div className="mx-auto max-w-[1400px] px-5 py-7 sm:px-8 lg:px-10">
 
           <div className="flex flex-wrap items-center justify-center gap-2.5">
@@ -183,34 +190,28 @@ export default async function DiamondPage({
               All Diamonds
             </Link>
 
-            {/* CATEGORIES */}
+            {/* DIAMOND CATEGORIES */}
 
-            {activeCategories.map((item) => {
-              const href = `/diamond?category=${encodeURIComponent(
-                item.name
-              )}`;
-
-              const isActive =
-                category?.toLowerCase() ===
-                item.name.toLowerCase();
-
-              return (
-                <Link
-                  key={item.id}
-                  href={href}
-                  className={`border px-5 py-2.5 text-[9px] font-semibold uppercase tracking-[0.15em] transition-all duration-300 sm:text-[10px] ${
-                    isActive
-                      ? "border-[#b08d57] bg-[#b08d57] text-white"
-                      : "border-[#e5ded2] bg-[#f1ece3] text-[#777169] hover:border-[#b08d57] hover:text-[#b08d57]"
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              );
-            })}
+            {activeCategories.map((item) => (
+              <Link
+                key={item.id}
+                href={`/diamond?category=${encodeURIComponent(
+                  item.id
+                )}`}
+                className={`border px-5 py-2.5 text-[9px] font-semibold uppercase tracking-[0.15em] transition-all duration-300 sm:text-[10px] ${
+                  category === item.id
+                    ? "border-[#b08d57] bg-[#b08d57] text-white"
+                    : "border-[#e5ded2] bg-[#f1ece3] text-[#777169] hover:border-[#b08d57] hover:text-[#b08d57]"
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
 
           </div>
+
         </div>
+
       </section>
 
       {/* =====================================================
@@ -218,22 +219,23 @@ export default async function DiamondPage({
       ===================================================== */}
 
       <section className="bg-[#f8f5ef]">
-        <div className="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
 
-          {/* Collection heading */}
+        <div className="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
 
           <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 
             <div>
+
               <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#b08d57] sm:text-xs">
-                {category || "Explore"}
+                {selectedCategory?.name || "Explore"}
               </p>
 
               <h2 className="mt-2 font-display text-3xl font-normal text-[#1c1a17] sm:text-4xl">
-                {category
-                  ? `${category} Jewellery`
+                {selectedCategory
+                  ? `${selectedCategory.name} Jewellery`
                   : "Diamond Collection"}
               </h2>
+
             </div>
 
             <div className="flex items-center gap-5">
@@ -255,6 +257,7 @@ export default async function DiamondPage({
               )}
 
             </div>
+
           </div>
 
           {/* =================================================
@@ -306,6 +309,7 @@ export default async function DiamondPage({
           )}
 
         </div>
+
       </section>
 
       {/* =====================================================
@@ -315,8 +319,6 @@ export default async function DiamondPage({
       <section className="border-t border-[#e5ded2] bg-[#f1ece3]">
 
         <div className="mx-auto max-w-[1400px] px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
-
-          {/* Heading */}
 
           <div className="mx-auto mb-12 max-w-2xl text-center">
 
@@ -337,8 +339,6 @@ export default async function DiamondPage({
 
           </div>
 
-          {/* Store Card */}
-
           <div className="mx-auto max-w-4xl border border-[#e5ded2] bg-[#f8f5ef] p-7 sm:p-9 md:p-10">
 
             <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#b08d57] sm:text-xs">
@@ -351,21 +351,16 @@ export default async function DiamondPage({
 
             <div className="mt-5 h-px w-10 bg-[#b08d57]" />
 
-            {/* Description */}
-
             {store?.description && (
               <p className="mt-5 max-w-2xl text-sm leading-7 text-[#777169] sm:text-base">
                 {store.description}
               </p>
             )}
 
-            {/* Store details */}
-
             <div className="mt-8 grid gap-7 sm:grid-cols-2">
 
-              {/* Address */}
-
               <div>
+
                 <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#9b9389]">
                   Address
                 </p>
@@ -374,11 +369,11 @@ export default async function DiamondPage({
                   {store?.address ||
                     "Store address coming soon"}
                 </p>
+
               </div>
 
-              {/* Phone */}
-
               <div>
+
                 <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#9b9389]">
                   Phone
                 </p>
@@ -395,11 +390,10 @@ export default async function DiamondPage({
                     Phone number coming soon
                   </p>
                 )}
+
               </div>
 
             </div>
-
-            {/* Store buttons */}
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
 
@@ -428,7 +422,9 @@ export default async function DiamondPage({
             </div>
 
           </div>
+
         </div>
+
       </section>
 
       {/* =====================================================
@@ -454,15 +450,18 @@ export default async function DiamondPage({
           </p>
 
           <div className="mt-8">
+
             <Link
               href="/gold"
               className="inline-flex min-h-[52px] items-center justify-center bg-[#b08d57] px-8 text-xs font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#8f6f3f]"
             >
               Explore Gold
             </Link>
+
           </div>
 
         </div>
+
       </section>
 
     </main>
@@ -489,8 +488,6 @@ function DiamondProductCard({
       className="group block"
     >
 
-      {/* Product Image */}
-
       <div className="relative aspect-square overflow-hidden border border-[#e5ded2] bg-[#f1ece3]">
 
         {productImage ? (
@@ -507,13 +504,9 @@ function DiamondProductCard({
           </div>
         )}
 
-        {/* New badge */}
-
         <span className="absolute left-3 top-3 bg-[#b08d57] px-3 py-1.5 text-[8px] font-semibold uppercase tracking-[0.16em] text-white sm:text-[9px]">
           New
         </span>
-
-        {/* Featured badge */}
 
         {product.featured && (
           <span className="absolute right-3 top-3 border border-[#e5ded2] bg-[#f8f5ef]/95 px-3 py-1.5 text-[8px] font-semibold uppercase tracking-[0.16em] text-[#b08d57] backdrop-blur sm:text-[9px]">
@@ -523,23 +516,15 @@ function DiamondProductCard({
 
       </div>
 
-      {/* Product Information */}
-
       <div className="pt-4">
-
-        {/* Category */}
 
         <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#b08d57] sm:text-[10px]">
           {product.categoryName || "Diamond Jewellery"}
         </p>
 
-        {/* Name */}
-
         <h3 className="mt-1.5 line-clamp-2 font-display text-base font-normal leading-6 text-[#1c1a17] transition-colors group-hover:text-[#b08d57] sm:text-lg">
           {product.name}
         </h3>
-
-        {/* Brand */}
 
         {product.brandName && (
           <p className="mt-2 text-[10px] uppercase tracking-[0.08em] text-[#918a81]">
@@ -547,28 +532,30 @@ function DiamondProductCard({
           </p>
         )}
 
-        {/* Details */}
-
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] uppercase tracking-[0.1em] text-[#918a81] sm:text-[10px]">
 
           {product.purity && (
-            <span>{product.purity}</span>
+            <span>
+              {product.purity}
+            </span>
           )}
 
           {product.weight > 0 && (
-            <span>{product.weight} g</span>
+            <span>
+              {product.weight} g
+            </span>
           )}
 
         </div>
 
-        {/* View Details */}
-
         <div className="mt-3 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#4d4943] transition-colors group-hover:text-[#b08d57] sm:text-[10px]">
+
           View Details
 
           <span className="ml-1 transition-all duration-300 group-hover:ml-2">
             →
           </span>
+
         </div>
 
       </div>
