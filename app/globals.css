@@ -1,0 +1,254 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f5ef;
+  --foreground: #1c1a17;
+
+  --cream: #f8f5ef;
+  --cream-dark: #f1ece3;
+
+  --gold: #b08d57;
+  --gold-light: #d6b878;
+  --gold-dark: #8f6f3f;
+
+  --charcoal: #1c1a17;
+  --muted: #777169;
+
+  --border: #e5ded2;
+  --white: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+a,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+}
+
+/* ---------------------------------------------
+   LUXURY TYPOGRAPHY
+--------------------------------------------- */
+
+.font-display {
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.font-sans {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ---------------------------------------------
+   GOLD TEXT
+--------------------------------------------- */
+
+.text-gold {
+  color: var(--gold);
+}
+
+.text-gold-dark {
+  color: var(--gold-dark);
+}
+
+/* ---------------------------------------------
+   GOLD BUTTON
+--------------------------------------------- */
+
+.btn-gold {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 48px;
+  padding: 0 28px;
+
+  background: var(--gold);
+  color: #ffffff;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+
+  transition:
+    background-color 200ms ease,
+    transform 200ms ease;
+}
+
+.btn-gold:hover {
+  background: var(--gold-dark);
+  transform: translateY(-1px);
+}
+
+/* ---------------------------------------------
+   OUTLINE BUTTON
+--------------------------------------------- */
+
+.btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 48px;
+  padding: 0 28px;
+
+  border: 1px solid var(--gold);
+
+  color: var(--charcoal);
+
+  font-size: 12px;
+  font-weight: 600;
+
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+
+  transition:
+    background-color 200ms ease,
+    color 200ms ease,
+    transform 200ms ease;
+}
+
+.btn-outline:hover {
+  background: var(--gold);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+/* ---------------------------------------------
+   SECTION LABEL
+--------------------------------------------- */
+
+.section-label {
+  color: var(--gold);
+
+  font-size: 11px;
+  font-weight: 600;
+
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+/* ---------------------------------------------
+   SECTION TITLE
+--------------------------------------------- */
+
+.section-title {
+  color: var(--charcoal);
+
+  font-family: Georgia, "Times New Roman", serif;
+
+  font-size: clamp(32px, 5vw, 56px);
+  font-weight: 400;
+
+  line-height: 1.05;
+
+  letter-spacing: -0.02em;
+}
+
+/* ---------------------------------------------
+   LUXURY DIVIDER
+--------------------------------------------- */
+
+.luxury-divider {
+  width: 56px;
+  height: 1px;
+
+  margin: 20px auto;
+
+  background: var(--gold);
+}
+
+/* ---------------------------------------------
+   RATES TICKER
+--------------------------------------------- */
+
+.rates-ticker {
+  animation: ratesTicker 35s linear infinite;
+}
+
+@keyframes ratesTicker {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ---------------------------------------------
+   SCROLLBAR
+--------------------------------------------- */
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cream);
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c8bba7;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--gold);
+}
+
+/* ---------------------------------------------
+   SELECTION
+--------------------------------------------- */
+
+::selection {
+  background: var(--gold);
+  color: #ffffff;
+}
+
+/* ---------------------------------------------
+   IMAGE DEFAULTS
+--------------------------------------------- */
+
+img {
+  max-width: 100%;
+}
+
+/* ---------------------------------------------
+   MOBILE
+--------------------------------------------- */
+
+@media (max-width: 640px) {
+  .section-title {
+    font-size: 34px;
+  }
+
+  .btn-gold,
+  .btn-outline {
+    width: 100%;
+  }
+}
