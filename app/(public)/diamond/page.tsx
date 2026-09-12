@@ -69,13 +69,13 @@ export default async function DiamondPage({
   }
 
   // =====================================================
-  // ACTIVE DIAMOND CATEGORIES
+  // ACTIVE CATEGORIES
   // =====================================================
 
+  // Categories are shared between Gold and Diamond.
+  // The Categories collection does NOT have a collection field.
   const activeCategories = categories.filter(
-    (item) =>
-      item.active &&
-      item.collection === "Diamond"
+    (item) => item.active
   );
 
   const selectedCategory = activeCategories.find(
