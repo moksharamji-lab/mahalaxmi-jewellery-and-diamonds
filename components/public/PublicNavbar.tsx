@@ -51,20 +51,19 @@ export default function PublicNavbar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#4a4135] bg-[#211e1a]">
-      <div className="mx-auto flex h-[86px] max-w-[1500px] items-center justify-between px-5 sm:px-8 lg:px-12">
-
+      <div className="mx-auto flex h-21.5 max-w-375 items-center justify-between px-5 sm:px-8 lg:px-12">
         {/* BRAND */}
         <Link
           href="/"
           onClick={() => setMobileOpen(false)}
           className="group flex flex-col"
         >
-          <span className="font-display text-[25px] font-normal tracking-[0.18em] text-[#d6b878] transition-colors duration-300 group-hover:text-[#e0c58a] sm:text-[29px]">
+          <span className="font-display text-[24px] font-normal tracking-[0.18em] text-[#d6b878] transition-colors duration-300 group-hover:text-[#e0c58a] sm:text-[27px]">
             MAHALAXMI
           </span>
 
-          <span className="mt-1 text-[9px] font-medium uppercase tracking-[0.34em] text-[#c8bba7] sm:text-[10px]">
-            Jewellery &amp; Diamonds
+          <span className="mt-1 text-[8px] font-medium uppercase tracking-[0.22em] text-[#c8bba7] sm:text-[9px]">
+            JEWELLERS AND DIAMONDS (SINCE - 1996)
           </span>
         </Link>
 
@@ -109,7 +108,7 @@ export default function PublicNavbar() {
       {/* MOBILE NAVIGATION */}
       {mobileOpen && (
         <div className="border-t border-[#4a4135] bg-[#29251f] lg:hidden">
-          <nav className="mx-auto max-w-[1500px] px-5 py-4 sm:px-8">
+          <nav className="mx-auto max-w-375 px-5 py-4 sm:px-8">
             {navItems.map((item) => {
               const Icon = item.icon;
 
