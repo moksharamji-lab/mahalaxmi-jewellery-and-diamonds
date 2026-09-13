@@ -1,15 +1,71 @@
-import { Gem, Coins } from "lucide-react";
-
 import { getActiveRates } from "@/services/rate.service";
 
 export default async function RatesTicker() {
   const rates = await getActiveRates();
 
-  if (rates.length === 0) {
+  const goldRates = rates.filter(
+    (rate) => rate.collection === "Gold"
+  );
+
+  if (goldRates.length === 0) {
     return null;
   }
 
-  const tickerRates = [...rates, ...rates];
+  const rateMap = new Map(
+    goldRates.map((rate) => [rate.purity.toLowerCase(), rate])
+  );
+
+  const getRate = (purity: string) => {
+    const rate = rateMap.get(purity.toLowerCase());
+
+    return rate
+      ? `₹${rate.rate.toLocaleString("en-IN")}`
+      : "₹00,000";
+  };
+
+  const tickerGroup = (
+    <div className="flex shrink-0 items-center whitespace-nowrap">
+      <span className="font-sans text-[10px] font-semibold text-white sm:text-[11px]">
+        Today&apos;s Gold Rate
+      </span>
+
+      <span className="mx-2 text-[10px] text-white/80 sm:mx-3">
+        |
+      </span>
+
+      <span className="font-sans text-[10px] font-medium text-white sm:text-[11px]">
+        24K - {getRate("24K")}
+      </span>
+
+      <span className="mx-2 text-[10px] text-white/80 sm:mx-3">
+        |
+      </span>
+
+      <span className="font-sans text-[10px] font-medium text-white sm:text-[11px]">
+        22K - {getRate("22K")}
+      </span>
+
+      <span className="mx-2 text-[10px] text-white/80 sm:mx-3">
+        |
+      </span>
+
+      <span className="font-sans text-[10px] font-medium text-white sm:text-[11px]">
+        18K - {getRate("18K")}
+      </span>
+
+      <span className="mx-2 text-[10px] text-white/80 sm:mx-3">
+        |
+      </span>
+
+      <span className="font-sans text-[10px] font-medium text-white sm:text-[11px]">
+        14K - {getRate("14K")}
+      </span>
+
+      <span className="mx-5 text-[10px] text-white/70 sm:mx-6">
+        |
+      </span>
+    </div>
+  );
 
   return (
     <div className="relative z-40 overflow-hidden border-b border-[#9f7d25] bg-[#D4AF37]">
@@ -20,50 +76,10 @@ export default async function RatesTicker() {
             animationDuration: "45s",
           }}
         >
-          {tickerRates.map((rate, index) => {
-            const isGold = rate.collection === "Gold";
-
-            return (
-              <div
-                key={`${rate.id}-${index}`}
-                className="flex shrink-0 items-center"
-              >
-                {/* COLLECTION ICON */}
-                <span className="ml-4 flex items-center sm:ml-6">
-                  {isGold ? (
-                    <Coins className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
-                  ) : (
-                    <Gem className="h-3.5 w-3.5 text-white sm:h-4 sm:w-4" />
-                  )}
-                </span>
-
-                {/* COLLECTION */}
-                <span className="ml-2 font-sans text-[10px] font-semibold uppercase tracking-[0.12em] text-white sm:text-[11px]">
-                  {rate.collection}
-                </span>
-
-                {/* PURITY */}
-                <span className="ml-2 font-sans text-[10px] font-medium uppercase tracking-[0.08em] text-[#fffdf5] sm:text-[11px]">
-                  {rate.purity}
-                </span>
-
-                {/* RATE */}
-                <span className="ml-2 font-sans text-[11px] font-bold tracking-[0.03em] text-white sm:text-[12px]">
-                  ₹{rate.rate.toLocaleString("en-IN")}
-                </span>
-
-                {/* UNIT */}
-                <span className="ml-1 font-sans text-[9px] font-medium uppercase tracking-[0.06em] text-[#fffdf5] sm:text-[10px]">
-                  {rate.unit}
-                </span>
-
-                {/* SEPARATOR */}
-                <span className="mx-5 font-sans text-[10px] text-white sm:mx-7 sm:text-[11px]">
-                  ✦
-                </span>
-              </div>
-            );
-          })}
+          {tickerGroup}
+          {tickerGroup}
+          {tickerGroup}
+          {tickerGroup}
         </div>
       </div>
     </div>
