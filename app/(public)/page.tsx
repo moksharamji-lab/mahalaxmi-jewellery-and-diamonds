@@ -11,6 +11,8 @@ import type { Product } from "@/types/product";
 import { getHeroSlides } from "@/services/hero-slide.service";
 import type { HeroSlide } from "@/types/hero-slide";
 
+import HeroSlider from "@/components/public/HeroSlider";
+
 export default async function HomePage() {
   let stores: Store[] = [];
   let newestProducts: Product[] = [];
@@ -51,19 +53,19 @@ export default async function HomePage() {
   }
 
   /* =====================================================
-     ACTIVE HERO SLIDE
+     ACTIVE HERO SLIDES
   ===================================================== */
 
   const activeHeroSlides = heroSlides
-    .filter(
-      (slide) =>
-        slide.active && slide.imageUrl
-    )
-    .sort(
-      (a, b) => a.order - b.order
-    );
-
-  const heroSlide = activeHeroSlides[0];
+  .filter(
+    (slide) =>
+      slide.active &&
+      slide.page === "Home" &&
+      (slide.videoUrl || slide.imageUrl)
+  )
+  .sort(
+    (a, b) => a.order - b.order
+  );
 
   /* =====================================================
      FIND STORES
@@ -84,186 +86,7 @@ export default async function HomePage() {
           HERO
       ================================================= */}
 
-      <section className="relative min-h-[650px] overflow-hidden border-b border-[#e5ded2] bg-[#f8f5ef] sm:min-h-[700px] lg:min-h-[760px]">
-
-        {/* =================================================
-            HERO IMAGE
-        ================================================= */}
-
-        {heroSlide?.imageUrl ? (
-          <div className="absolute inset-0">
-
-            <img
-              src={heroSlide.imageUrl}
-              alt={
-                heroSlide.title ||
-                "Mahalaxmi Jewellery & Diamonds"
-              }
-              className="h-full w-full object-cover"
-            />
-
-            {/* Dark luxury overlay */}
-
-            <div className="absolute inset-0 bg-[#1c1a17]/45" />
-
-            {/* Soft gradient */}
-
-            <div className="absolute inset-0 bg-gradient-to-r from-[#1c1a17]/70 via-[#1c1a17]/35 to-[#1c1a17]/20" />
-
-          </div>
-        ) : (
-          <>
-            {/* =================================================
-                FALLBACK BACKGROUND
-            ================================================= */}
-
-            <div className="pointer-events-none absolute left-[-180px] top-[-160px] h-[420px] w-[420px] rounded-full bg-[#d6b878]/10 blur-3xl" />
-
-            <div className="pointer-events-none absolute bottom-[-180px] right-[-180px] h-[420px] w-[420px] rounded-full bg-[#b08d57]/10 blur-3xl" />
-          </>
-        )}
-
-        {/* =================================================
-            HERO CONTENT
-        ================================================= */}
-
-        <div className="relative z-10 mx-auto flex min-h-[650px] max-w-[1400px] items-center px-5 py-24 sm:min-h-[700px] sm:px-8 sm:py-28 lg:min-h-[760px] lg:px-10">
-
-          <div className="mx-auto w-full max-w-5xl text-center">
-
-            {/* =================================================
-                LABEL
-            ================================================= */}
-
-            <div className="flex items-center justify-center gap-3 sm:gap-4">
-
-              <span
-                className={`h-px w-8 sm:w-14 ${
-                  heroSlide?.imageUrl
-                    ? "bg-[#d6b878]"
-                    : "bg-[#b08d57]"
-                }`}
-              />
-
-              <p
-                className={`text-[10px] font-semibold uppercase tracking-[0.28em] sm:text-xs sm:tracking-[0.4em] ${
-                  heroSlide?.imageUrl
-                    ? "text-[#d6b878]"
-                    : "text-[#b08d57]"
-                }`}
-              >
-                {heroSlide?.subtitle ||
-                  "The Art of Jewellery"}
-              </p>
-
-              <span
-                className={`h-px w-8 sm:w-14 ${
-                  heroSlide?.imageUrl
-                    ? "bg-[#d6b878]"
-                    : "bg-[#b08d57]"
-                }`}
-              />
-
-            </div>
-
-            {/* =================================================
-                HERO TITLE
-            ================================================= */}
-
-            <h1
-              className={`mt-8 font-display text-5xl font-normal leading-[1.02] tracking-[-0.03em] sm:text-6xl md:text-7xl lg:text-[82px] ${
-                heroSlide?.imageUrl
-                  ? "text-white"
-                  : "text-[#1c1a17]"
-              }`}
-            >
-              {heroSlide?.title ||
-                "Timeless Elegance,"}
-
-              {!heroSlide && (
-                <span className="mt-2 block text-[#b08d57]">
-                  Crafted For You
-                </span>
-              )}
-            </h1>
-
-            {/* =================================================
-                DESCRIPTION
-            ================================================= */}
-
-            <p
-              className={`mx-auto mt-8 max-w-2xl text-sm leading-7 sm:text-base sm:leading-8 md:text-lg ${
-                heroSlide?.imageUrl
-                  ? "text-[#f5f0e8]"
-                  : "text-[#777169]"
-              }`}
-            >
-              Discover exquisite gold and diamond
-              jewellery designed to celebrate your
-              most precious moments.
-            </p>
-
-            {/* =================================================
-                HERO BUTTONS
-            ================================================= */}
-
-            <div className="mx-auto mt-10 flex w-full max-w-xl flex-col gap-3 sm:flex-row sm:gap-4">
-
-              {/* Gold button */}
-
-              <Link
-                href={
-                  heroSlide?.buttonLink ||
-                  "/gold"
-                }
-                className="flex min-h-[52px] flex-1 items-center justify-center bg-[#b08d57] px-7 text-xs font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#8f6f3f]"
-              >
-                {heroSlide?.buttonText ||
-                  "Explore Gold"}
-              </Link>
-
-              {/* Diamond button */}
-
-              <Link
-                href="/diamond"
-                className="flex min-h-[52px] flex-1 items-center justify-center bg-[#b08d57] px-7 text-xs font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#8f6f3f]"
-              >
-                Explore Diamonds
-              </Link>
-
-            </div>
-
-            {/* =================================================
-                DECORATIVE DIVIDER
-            ================================================= */}
-
-            <div className="mx-auto mt-14 flex items-center justify-center gap-3">
-
-              <span
-                className={`h-px w-10 ${
-                  heroSlide?.imageUrl
-                    ? "bg-white/30"
-                    : "bg-[#e5ded2]"
-                }`}
-              />
-
-              <span className="text-sm text-[#d6b878]">
-                ✦
-              </span>
-
-              <span
-                className={`h-px w-10 ${
-                  heroSlide?.imageUrl
-                    ? "bg-white/30"
-                    : "bg-[#e5ded2]"
-                }`}
-              />
-
-            </div>
-
-          </div>
-        </div>
-      </section>
+      <HeroSlider slides={activeHeroSlides} />
 
       {/* =================================================
           FEATURED COLLECTION
@@ -388,6 +211,7 @@ export default async function HomePage() {
                   <span>
                     →
                   </span>
+
                 </Link>
 
               </div>
@@ -464,11 +288,13 @@ export default async function HomePage() {
                 <span>
                   →
                 </span>
+
               </Link>
 
             </div>
 
           </div>
+
         </div>
       </section>
 

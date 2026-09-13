@@ -11,6 +11,7 @@ import {
   Image,
   BadgeIndianRupee,
   Store,
+  BookOpen,
   X,
 } from "lucide-react";
 
@@ -55,6 +56,11 @@ const menus = [
     href: "/admin/stores",
     icon: Store,
   },
+  {
+    name: "Our Story",
+    href: "/admin/our-story",
+    icon: BookOpen,
+  },
 ];
 
 export default function Sidebar({
@@ -70,7 +76,6 @@ export default function Sidebar({
   return (
     <>
       {/* Mobile overlay */}
-
       {mobileMenuOpen && (
         <button
           type="button"
@@ -81,7 +86,6 @@ export default function Sidebar({
       )}
 
       {/* Sidebar */}
-
       <aside
         className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-[#D8C9B5] bg-[#EDE3D3] shadow-[4px_0_24px_rgba(80,60,30,0.06)] transition-transform duration-300 lg:static lg:z-auto lg:translate-x-0 ${
           mobileMenuOpen
@@ -89,11 +93,8 @@ export default function Sidebar({
             : "-translate-x-full"
         }`}
       >
-
         {/* Logo */}
-
         <div className="flex h-20 shrink-0 items-center justify-between border-b border-[#D8C9B5] px-7">
-
           <Link
             href="/admin"
             onClick={handleNavigation}
@@ -104,12 +105,11 @@ export default function Sidebar({
             </div>
 
             <div className="mt-0.5 text-[9px] uppercase tracking-[0.3em] text-[#756B5E]">
-              Jewellery & Diamonds
+              Jewellers &amp; Diamonds
             </div>
           </Link>
 
           {/* Mobile close */}
-
           <button
             type="button"
             onClick={onClose}
@@ -118,13 +118,10 @@ export default function Sidebar({
           >
             <X className="h-5 w-5" />
           </button>
-
         </div>
 
         {/* Navigation */}
-
         <nav className="flex-1 space-y-1.5 overflow-y-auto p-5">
-
           <p className="mb-4 px-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#8B7F70]">
             Management
           </p>
@@ -148,7 +145,6 @@ export default function Sidebar({
                     : "text-[#4F473D] hover:bg-[#F3EDE2] hover:text-[#302A23]"
                 }`}
               >
-
                 <Icon
                   className={`h-5 w-5 shrink-0 ${
                     active
@@ -157,34 +153,26 @@ export default function Sidebar({
                   }`}
                 />
 
-                <span>
-                  {item.name}
-                </span>
+                <span>{item.name}</span>
 
                 {active && (
                   <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#FFF9EF]" />
                 )}
-
               </Link>
             );
           })}
-
         </nav>
 
         {/* Sidebar footer */}
-
         <div className="border-t border-[#D8C9B5] p-5">
-
           <p className="text-[10px] uppercase tracking-[0.2em] text-[#8B7F70]">
             CMS
           </p>
 
           <p className="mt-2 text-xs text-[#6F665B]">
-            Mahalaxmi Jewellery
+            Mahalaxmi Jewellers
           </p>
-
         </div>
-
       </aside>
     </>
   );

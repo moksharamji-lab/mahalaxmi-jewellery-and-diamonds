@@ -2,9 +2,13 @@ import Link from "next/link";
 import { getStores } from "@/services/store.service";
 
 export default async function ContactPage() {
-  const stores = (await getStores()).filter(
-    (store) => store.active
-  );
+  const stores = (await getStores())
+  .filter((store) => store.active)
+  .sort((a, b) => {
+    if (a.collection === "Gold") return -1;
+    if (b.collection === "Gold") return 1;
+    return 0;
+  });
 
   return (
     <main className="min-h-screen bg-[#f8f5ef] text-[#1c1a17]">

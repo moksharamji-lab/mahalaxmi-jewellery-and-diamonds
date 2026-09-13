@@ -21,6 +21,7 @@ export default function HeroForm({
   });
 
   const [image, setImage] = useState<File | null>(null);
+  const [video, setVideo] = useState<File | null>(null);
 
   async function handleSubmit(
     e: React.FormEvent<HTMLFormElement>
@@ -39,6 +40,10 @@ export default function HeroForm({
 
       if (image) {
         formData.append("image", image);
+      }
+
+      if (video) {
+        formData.append("video", video);
       }
 
       if (initialData) {
@@ -68,6 +73,7 @@ export default function HeroForm({
         });
 
         setImage(null);
+        setVideo(null);
       }
     } catch (error) {
       console.error(error);
@@ -80,7 +86,7 @@ export default function HeroForm({
       onSubmit={handleSubmit}
       className="max-w-4xl space-y-6 rounded-2xl border border-[#D8C9B5] bg-[#FAF6EE] p-6 shadow-[0_4px_18px_rgba(80,60,30,0.04)] sm:p-8"
     >
-      {/* Form Header */}
+      {/* Header */}
       <div className="border-b border-[#E3D7C5] pb-5">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#A47C3A]">
           Homepage Banner
@@ -260,7 +266,7 @@ export default function HeroForm({
             type="file"
             accept="image/*"
             onChange={(e) => {
-              if (e.target.files) {
+              if (e.target.files?.[0]) {
                 setImage(e.target.files[0]);
               }
             }}
@@ -286,6 +292,76 @@ export default function HeroForm({
             <img
               src={URL.createObjectURL(image)}
               alt="New hero slide preview"
+              className="h-48 w-full rounded-lg object-cover sm:h-64"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Current Video */}
+      {initialData?.videoUrl && (
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-[#40382F]">
+            Current Hero Video
+          </label>
+
+          <div className="overflow-hidden rounded-xl border border-[#D8C9B5] bg-black p-2">
+            <video
+              src={initialData.videoUrl}
+              controls
+              playsInline
+              className="h-48 w-full rounded-lg object-cover sm:h-64"
+            />
+          </div>
+
+          <p className="mt-2 text-xs text-[#817668]">
+            Upload a new video below if you want to replace the current hero video.
+          </p>
+        </div>
+      )}
+
+      {/* Upload Video */}
+      <div>
+        <label
+          className="mb-2 block text-sm font-semibold text-[#40382F]"
+          htmlFor="hero-video"
+        >
+          {initialData ? "Replace Hero Video" : "Upload Hero Video"}
+        </label>
+
+        <div className="rounded-xl border border-dashed border-[#CDBDA8] bg-[#F8F2E8] p-4 transition hover:border-[#B08D57]">
+          <input
+            id="hero-video"
+            type="file"
+            accept="video/mp4,video/webm,video/quicktime"
+            onChange={(e) => {
+              if (e.target.files?.[0]) {
+                setVideo(e.target.files[0]);
+              }
+            }}
+            className="block w-full cursor-pointer text-sm text-[#6F665B] file:mr-4 file:rounded-lg file:border-0 file:bg-[#EDE3D3] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#554C42] hover:file:bg-[#E3D7C5]"
+          />
+        </div>
+
+        {video && (
+          <p className="mt-2 text-xs font-medium text-[#A47C3A]">
+            Selected: {video.name}
+          </p>
+        )}
+      </div>
+
+      {/* New Video Preview */}
+      {video && (
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-[#40382F]">
+            New Hero Video Preview
+          </label>
+
+          <div className="overflow-hidden rounded-xl border border-[#D8C9B5] bg-black p-2">
+            <video
+              src={URL.createObjectURL(video)}
+              controls
+              playsInline
               className="h-48 w-full rounded-lg object-cover sm:h-64"
             />
           </div>

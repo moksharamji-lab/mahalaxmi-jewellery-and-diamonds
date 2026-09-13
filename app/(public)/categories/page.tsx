@@ -42,9 +42,9 @@ export default async function CategoriesPage() {
 
       <section className="border-b border-[#e5ded2] bg-[#f1ece3]">
 
-        <div className="mx-auto max-w-[1400px] px-5 sm:px-8 lg:px-10">
+        <div className="mx-auto max-w-350 px-5 sm:px-8 lg:px-10">
 
-          <div className="flex min-h-[460px] items-center justify-center py-20 sm:min-h-[520px]">
+          <div className="flex min-h-115 items-center justify-center py-20 sm:min-h-130">
 
             <div className="max-w-3xl text-center">
 
@@ -111,7 +111,7 @@ export default async function CategoriesPage() {
 
       <section className="bg-[#f8f5ef]">
 
-        <div className="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+        <div className="mx-auto max-w-350 px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
 
           {activeCategories.length === 0 ? (
 
@@ -137,7 +137,7 @@ export default async function CategoriesPage() {
 
               <Link
                 href="/"
-                className="mt-8 inline-flex min-h-[50px] items-center justify-center bg-[#b08d57] px-7 text-[10px] font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:bg-[#8f6f3f] sm:text-xs"
+                className="mt-8 inline-flex min-h-12.5 items-center justify-center bg-[#b08d57] px-7 text-[10px] font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:bg-[#8f6f3f] sm:text-xs"
               >
                 Back to Home
               </Link>
@@ -224,7 +224,7 @@ export default async function CategoriesPage() {
 
       <section className="border-t border-[#e5ded2] bg-[#f1ece3]">
 
-        <div className="mx-auto max-w-[1400px] px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
+        <div className="mx-auto max-w-350 px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
 
           <div className="mx-auto mb-12 max-w-2xl text-center">
 
@@ -266,7 +266,7 @@ export default async function CategoriesPage() {
 
               <Link
                 href="/gold"
-                className="mt-7 inline-flex min-h-[50px] items-center justify-center bg-[#b08d57] px-7 text-[10px] font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:bg-[#8f6f3f] sm:text-xs"
+                className="mt-7 inline-flex min-h-12.5 items-center justify-center bg-[#b08d57] px-7 text-[10px] font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:bg-[#8f6f3f] sm:text-xs"
               >
                 View Gold Collection
               </Link>
@@ -297,7 +297,7 @@ export default async function CategoriesPage() {
 
               <Link
                 href="/diamond"
-                className="mt-7 inline-flex min-h-[50px] items-center justify-center bg-[#b08d57] px-7 text-[10px] font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:bg-[#8f6f3f] sm:text-xs"
+                className="mt-7 inline-flex min-h-12.5 items-center justify-center bg-[#b08d57] px-7 text-[10px] font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:bg-[#8f6f3f] sm:text-xs"
               >
                 View Diamond Collection
               </Link>

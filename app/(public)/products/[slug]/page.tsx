@@ -158,81 +158,130 @@ export default async function ProductPage({
                 {product.categoryName}
               </p>
             )}
+{/* =================================================
+    PRODUCT DETAILS
+================================================= */}
 
-            {/* =================================================
-                PRODUCT DETAILS
-            ================================================= */}
+<div className="mt-8 rounded-3xl border border-[#dfd5c4] bg-white p-6 shadow-[0_10px_35px_rgba(80,60,30,0.04)] sm:p-7 md:p-8">
 
-            <div className="mt-8 grid grid-cols-2 gap-4">
+  {/* Heading */}
 
-              {/* Purity */}
+  <div className="border-b border-[#eee5d7] pb-5">
+    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#b08a3c]">
+      Product Information
+    </p>
 
-              {product.purity && (
-                <div className="rounded-2xl border border-[#dfd5c4] bg-white p-5 shadow-[0_10px_35px_rgba(80,60,30,0.04)]">
+    <h2 className="mt-2 text-2xl font-semibold text-[#1c1a17]">
+      Product Details
+    </h2>
+  </div>
 
-                  <p className="text-xs uppercase tracking-wider text-[#9b917f]">
-                    Purity
-                  </p>
+  {/* Details */}
 
-                  <p className="mt-2 font-semibold text-[#1c1a17]">
-                    {product.purity}
-                  </p>
+  <div className="mt-6 space-y-6">
 
-                </div>
-              )}
+    {/* Purity */}
 
-              {/* Weight */}
+    {product.purity && (
+      <div>
+        <p className="text-xs uppercase tracking-[0.18em] text-[#9b917f]">
+          Purity
+        </p>
 
-              {product.weight > 0 && (
-                <div className="rounded-2xl border border-[#dfd5c4] bg-white p-5 shadow-[0_10px_35px_rgba(80,60,30,0.04)]">
+        <p className="mt-2 font-semibold text-[#1c1a17]">
+          {product.purity}
+        </p>
+      </div>
+    )}
 
-                  <p className="text-xs uppercase tracking-wider text-[#9b917f]">
-                    Weight
-                  </p>
+    {/* Description */}
 
-                  <p className="mt-2 font-semibold text-[#1c1a17]">
-                    {product.weight} g
-                  </p>
+    {product.description && (
+      <div>
+        <p className="text-xs uppercase tracking-[0.18em] text-[#9b917f]">
+          Description
+        </p>
 
-                </div>
-              )}
+        <p className="mt-2 whitespace-pre-line leading-7 text-[#6f685e]">
+          {product.description}
+        </p>
+      </div>
+    )}
 
-              {/* Brand */}
+    {/* =================================================
+        GOLD DETAILS
+    ================================================= */}
 
-              {product.brandName && (
-                <div className="rounded-2xl border border-[#dfd5c4] bg-white p-5 shadow-[0_10px_35px_rgba(80,60,30,0.04)]">
+    {collection === "Gold" && (
+      <>
+        {/* HYD */}
 
-                  <p className="text-xs uppercase tracking-wider text-[#9b917f]">
-                    Brand
-                  </p>
+        {product.hyd && (
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-[#9b917f]">
+              HYD
+            </p>
 
-                  <p className="mt-2 font-semibold text-[#1c1a17]">
-                    {product.brandName}
-                  </p>
+            <p className="mt-2 font-semibold text-[#1c1a17]">
+              {product.hyd}
+            </p>
+          </div>
+        )}
 
-                </div>
-              )}
+        {/* Hallmark */}
 
-              {/* Making Charges */}
+        {product.hallmark && (
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-[#9b917f]">
+              Hallmark
+            </p>
 
-              {product.makingCharges > 0 && (
-                <div className="rounded-2xl border border-[#dfd5c4] bg-white p-5 shadow-[0_10px_35px_rgba(80,60,30,0.04)]">
+            <p className="mt-2 font-semibold text-[#1c1a17]">
+              {product.hallmark}
+            </p>
+          </div>
+        )}
+      </>
+    )}
 
-                  <p className="text-xs uppercase tracking-wider text-[#9b917f]">
-                    Making Charges
-                  </p>
+    {/* =================================================
+        DIAMOND DETAILS
+    ================================================= */}
 
-                  <p className="mt-2 font-semibold text-[#1c1a17]">
-                    ₹
-                    {product.makingCharges.toLocaleString(
-                      "en-IN"
-                    )}
-                  </p>
+    {collection === "Diamond" && (
+      <>
+        {/* IGI */}
 
-                </div>
-              )}
+        {product.igi && (
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-[#9b917f]">
+              IGI
+            </p>
 
-            </div>
+            <p className="mt-2 font-semibold text-[#1c1a17]">
+              {product.igi}
+            </p>
+          </div>
+        )}
+
+        {/* SGL */}
+
+        {product.sgl && (
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-[#9b917f]">
+              SGL
+            </p>
+
+            <p className="mt-2 font-semibold text-[#1c1a17]">
+              {product.sgl}
+            </p>
+          </div>
+        )}
+      </>
+    )}
+
+  </div>
+</div>
 
             {/* =================================================
                 DESCRIPTION

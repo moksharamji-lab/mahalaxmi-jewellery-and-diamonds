@@ -8,6 +8,16 @@ import {
   type Category,
 } from "@/services/category.service";
 
+import {
+  getHeroSlides,
+} from "@/services/hero-slide.service";
+
+import type {
+  HeroSlide,
+} from "@/types/hero-slide";
+
+import HeroSlider from "@/components/public/HeroSlider";
+
 type Props = {
   searchParams: Promise<{
     category?: string;
@@ -17,14 +27,16 @@ type Props = {
 export default async function GoldPage({
   searchParams,
 }: Props) {
-  const { category } = await searchParams;
+  const { category } =
+    await searchParams;
 
   let products: Product[] = [];
   let categories: Category[] = [];
+  let heroSlides: HeroSlide[] = [];
 
-  // =====================================================
-  // LOAD GOLD PRODUCTS
-  // =====================================================
+  /* =====================================================
+     LOAD GOLD PRODUCTS
+  ===================================================== */
 
   try {
     products = await getProducts({
@@ -33,97 +45,90 @@ export default async function GoldPage({
       category: category || undefined,
     });
   } catch (error) {
-    console.error("Failed to load gold products:", error);
+    console.error(
+      "Failed to load gold products:",
+      error
+    );
   }
 
-  // =====================================================
-  // LOAD CATEGORIES
-  // =====================================================
+  /* =====================================================
+     LOAD CATEGORIES
+  ===================================================== */
 
   try {
     categories = await getCategories();
   } catch (error) {
-    console.error("Failed to load categories:", error);
+    console.error(
+      "Failed to load categories:",
+      error
+    );
   }
 
-  // =====================================================
-  // ACTIVE GOLD CATEGORIES
-  // =====================================================
+  /* =====================================================
+     LOAD HERO SLIDES
+  ===================================================== */
 
-  const activeCategories = categories.filter(
-    (item) =>
-      item.active &&
-      item.collection === "Gold"
-  );
+  try {
+    heroSlides = await getHeroSlides();
+  } catch (error) {
+    console.error(
+      "Failed to load Gold hero slides:",
+      error
+    );
+  }
 
-  const selectedCategory = activeCategories.find(
-    (item) => item.id === category
-  );
+  /* =====================================================
+     ACTIVE GOLD HERO SLIDES
+  ===================================================== */
+
+  const activeHeroSlides =
+    heroSlides
+      .filter(
+        (slide) =>
+          slide.active &&
+          slide.page === "Gold" &&
+          (slide.videoUrl ||
+            slide.imageUrl)
+      )
+      .sort(
+        (a, b) =>
+          a.order - b.order
+      );
+
+  /* =====================================================
+     ACTIVE GOLD CATEGORIES
+  ===================================================== */
+
+  const activeCategories =
+    categories.filter(
+      (item) =>
+        item.active &&
+        item.collection === "Gold"
+    );
+
+  const selectedCategory =
+    activeCategories.find(
+      (item) =>
+        item.id === category
+    );
 
   return (
     <main className="min-h-screen bg-[#f8f5ef] text-[#1c1a17]">
 
       {/* =====================================================
-          PAGE HERO
+          GOLD HERO SLIDER
       ===================================================== */}
 
-      <section className="border-b border-[#e5ded2] bg-[#f1ece3]">
-        <div className="mx-auto max-w-[1400px] px-5 sm:px-8 lg:px-10">
-          <div className="flex min-h-[460px] items-center justify-center py-20 sm:min-h-[520px]">
-            <div className="max-w-3xl text-center">
-
-              <div className="flex items-center justify-center gap-3 sm:gap-4">
-                <span className="h-px w-8 bg-[#b08d57] sm:w-14" />
-
-                <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#b08d57] sm:text-xs sm:tracking-[0.4em]">
-                  The Gold Collection
-                </p>
-
-                <span className="h-px w-8 bg-[#b08d57] sm:w-14" />
-              </div>
-
-              <h1 className="mt-7 font-display text-5xl font-normal leading-[1.05] tracking-[-0.03em] text-[#1c1a17] sm:text-6xl md:text-7xl">
-                Timeless Gold
-
-                <span className="mt-2 block text-[#b08d57]">
-                  Jewellery
-                </span>
-              </h1>
-
-              <p className="mx-auto mt-7 max-w-2xl text-sm leading-7 text-[#777169] sm:text-base sm:leading-8">
-                Discover our collection of beautifully
-                crafted gold jewellery, created to become
-                part of your most treasured moments.
-              </p>
-
-              {selectedCategory && (
-                <div className="mt-7">
-                  <span className="inline-flex items-center border border-[#b08d57] bg-[#f8f5ef] px-4 py-2 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#b08d57] sm:text-[10px]">
-                    Showing: {selectedCategory.name}
-                  </span>
-                </div>
-              )}
-
-              <div className="mx-auto mt-8 flex items-center justify-center gap-3">
-                <span className="h-px w-10 bg-[#e5ded2]" />
-
-                <span className="text-sm text-[#b08d57]">
-                  ✦
-                </span>
-
-                <span className="h-px w-10 bg-[#e5ded2]" />
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </section>
+      <HeroSlider
+        slides={activeHeroSlides}
+      />
 
       {/* =====================================================
           CATEGORY FILTER
       ===================================================== */}
 
       <section className="border-b border-[#e5ded2] bg-[#f8f5ef]">
+
         <div className="mx-auto max-w-[1400px] px-5 py-7 sm:px-8 lg:px-10">
 
           <div className="flex flex-wrap items-center justify-center gap-2.5">
@@ -143,25 +148,28 @@ export default async function GoldPage({
 
             {/* GOLD CATEGORIES */}
 
-            {activeCategories.map((item) => (
-              <Link
-                key={item.id}
-                href={`/gold?category=${encodeURIComponent(
-                  item.id
-                )}`}
-                className={`border px-5 py-2.5 text-[9px] font-semibold uppercase tracking-[0.15em] transition-all duration-300 sm:text-[10px] ${
-                  category === item.id
-                    ? "border-[#b08d57] bg-[#b08d57] text-white"
-                    : "border-[#e5ded2] bg-[#f1ece3] text-[#777169] hover:border-[#b08d57] hover:text-[#b08d57]"
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
+            {activeCategories.map(
+              (item) => (
+                <Link
+                  key={item.id}
+                  href={`/gold?category=${encodeURIComponent(
+                    item.id
+                  )}`}
+                  className={`border px-5 py-2.5 text-[9px] font-semibold uppercase tracking-[0.15em] transition-all duration-300 sm:text-[10px] ${
+                    category === item.id
+                      ? "border-[#b08d57] bg-[#b08d57] text-white"
+                      : "border-[#e5ded2] bg-[#f1ece3] text-[#777169] hover:border-[#b08d57] hover:text-[#b08d57]"
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              )
+            )}
 
           </div>
 
         </div>
+
       </section>
 
       {/* =====================================================
@@ -169,13 +177,16 @@ export default async function GoldPage({
       ===================================================== */}
 
       <section className="bg-[#f8f5ef]">
+
         <div className="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
 
           <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 
             <div>
+
               <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#b08d57] sm:text-xs">
-                {selectedCategory?.name || "Explore"}
+                {selectedCategory?.name ||
+                  "Explore"}
               </p>
 
               <h2 className="mt-2 font-display text-3xl font-normal text-[#1c1a17] sm:text-4xl">
@@ -183,6 +194,7 @@ export default async function GoldPage({
                   ? `${selectedCategory.name} Jewellery`
                   : "Gold Collection"}
               </h2>
+
             </div>
 
             <div className="flex items-center gap-5">
@@ -204,6 +216,7 @@ export default async function GoldPage({
               )}
 
             </div>
+
           </div>
 
           {/* =================================================
@@ -214,12 +227,14 @@ export default async function GoldPage({
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-2 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
 
-              {products.map((product) => (
-                <GoldProductCard
-                  key={product.id}
-                  product={product}
-                />
-              ))}
+              {products.map(
+                (product) => (
+                  <GoldProductCard
+                    key={product.id}
+                    product={product}
+                  />
+                )
+              )}
 
             </div>
 
@@ -257,6 +272,7 @@ export default async function GoldPage({
           )}
 
         </div>
+
       </section>
 
       {/* =====================================================
@@ -264,6 +280,7 @@ export default async function GoldPage({
       ===================================================== */}
 
       <section className="border-t border-[#e5ded2] bg-[#f1ece3]">
+
         <div className="mx-auto max-w-4xl px-5 py-20 text-center sm:px-8 sm:py-24">
 
           <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#b08d57] sm:text-xs sm:tracking-[0.4em]">
@@ -276,20 +293,23 @@ export default async function GoldPage({
 
           <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-[#777169] sm:text-base">
             Explore our elegant diamond jewellery
-            collection and discover pieces designed to
-            shine through every occasion.
+            collection and discover pieces designed
+            to shine through every occasion.
           </p>
 
           <div className="mt-8">
+
             <Link
               href="/diamond"
               className="inline-flex min-h-[52px] items-center justify-center bg-[#b08d57] px-8 text-xs font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#8f6f3f]"
             >
               Explore Diamonds
             </Link>
+
           </div>
 
         </div>
+
       </section>
 
     </main>

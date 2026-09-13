@@ -23,6 +23,15 @@ type ProductFormState = {
   weight: string;
   makingCharges: string;
   description: string;
+
+  // Gold
+  hyd: string;
+  hallmark: string;
+
+  // Diamond
+  igi: string;
+  sgl: string;
+
   featured: boolean;
   active: boolean;
 };
@@ -48,6 +57,14 @@ export default function ProductForm({
         initialData?.makingCharges?.toString() ?? "",
       description:
         initialData?.description ?? "",
+        hyd:
+  initialData?.hyd ?? "",
+hallmark:
+  initialData?.hallmark ?? "",
+igi:
+  initialData?.igi ?? "",
+sgl:
+  initialData?.sgl ?? "",
       featured:
         initialData?.featured ?? false,
       active:
@@ -250,6 +267,26 @@ export default function ProductForm({
         "description",
         form.description
       );
+      
+      formData.append(
+  "hyd",
+  form.hyd
+);
+
+formData.append(
+  "hallmark",
+  form.hallmark
+);
+
+formData.append(
+  "igi",
+  form.igi
+);
+
+formData.append(
+  "sgl",
+  form.sgl
+);
 
       formData.append(
         "featured",
@@ -329,6 +366,10 @@ export default function ProductForm({
         weight: "",
         makingCharges: "",
         description: "",
+        hyd: "",
+hallmark: "",
+igi: "",
+sgl: "",
         featured: false,
         active: true,
       });
@@ -543,6 +584,94 @@ export default function ProductForm({
               className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
             />
           </div>
+
+{/* Gold Details */}
+
+{form.collection === "Gold" && (
+  <>
+    <div>
+      <label className="mb-2 block text-sm font-semibold text-[#40382F]">
+        HYD
+      </label>
+
+      <input
+        type="text"
+        value={form.hyd}
+        onChange={(e) =>
+          setForm({
+            ...form,
+            hyd: e.target.value,
+          })
+        }
+        placeholder="Enter HYD"
+        className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
+      />
+    </div>
+
+    <div>
+      <label className="mb-2 block text-sm font-semibold text-[#40382F]">
+        Hallmark
+      </label>
+
+      <input
+        type="text"
+        value={form.hallmark}
+        onChange={(e) =>
+          setForm({
+            ...form,
+            hallmark: e.target.value,
+          })
+        }
+        placeholder="Enter Hallmark"
+        className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
+      />
+    </div>
+  </>
+)}
+
+{/* Diamond Details */}
+
+{form.collection === "Diamond" && (
+  <>
+    <div>
+      <label className="mb-2 block text-sm font-semibold text-[#40382F]">
+        IGI
+      </label>
+
+      <input
+        type="text"
+        value={form.igi}
+        onChange={(e) =>
+          setForm({
+            ...form,
+            igi: e.target.value,
+          })
+        }
+        placeholder="Enter IGI"
+        className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
+      />
+    </div>
+
+    <div>
+      <label className="mb-2 block text-sm font-semibold text-[#40382F]">
+        SGL
+      </label>
+
+      <input
+        type="text"
+        value={form.sgl}
+        onChange={(e) =>
+          setForm({
+            ...form,
+            sgl: e.target.value,
+          })
+        }
+        placeholder="Enter SGL"
+        className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
+      />
+    </div>
+  </>
+)}
 
           {/* Weight */}
 

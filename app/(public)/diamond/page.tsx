@@ -17,6 +17,16 @@ import {
   type Store,
 } from "@/services/store.service";
 
+import {
+  getHeroSlides,
+} from "@/services/hero-slide.service";
+
+import type {
+  HeroSlide,
+} from "@/types/hero-slide";
+
+import HeroSlider from "@/components/public/HeroSlider";
+
 type Props = {
   searchParams: Promise<{
     category?: string;
@@ -26,146 +36,140 @@ type Props = {
 export default async function DiamondPage({
   searchParams,
 }: Props) {
-  const { category } = await searchParams;
+  const { category } =
+    await searchParams;
 
   let products: Product[] = [];
   let categories: Category[] = [];
   let store: Store | null = null;
+  let heroSlides: HeroSlide[] = [];
 
-  // =====================================================
-  // LOAD DIAMOND PRODUCTS
-  // =====================================================
+  /* =====================================================
+     LOAD DIAMOND PRODUCTS
+  ===================================================== */
 
   try {
     const filters: ProductFilters = {
       collection: "Diamond",
       active: true,
-      category: category || undefined,
+      category:
+        category || undefined,
     };
 
-    products = await getProducts(filters);
+    products =
+      await getProducts(filters);
   } catch (error) {
-    console.error("Failed to load Diamond products:", error);
+    console.error(
+      "Failed to load Diamond products:",
+      error
+    );
   }
 
-  // =====================================================
-  // LOAD CATEGORIES
-  // =====================================================
+  /* =====================================================
+     LOAD CATEGORIES
+  ===================================================== */
 
   try {
-    categories = await getCategories();
+    categories =
+      await getCategories();
   } catch (error) {
-    console.error("Failed to load categories:", error);
+    console.error(
+      "Failed to load categories:",
+      error
+    );
   }
 
-  // =====================================================
-  // LOAD DIAMOND STORE
-  // =====================================================
+  /* =====================================================
+     LOAD DIAMOND STORE
+  ===================================================== */
 
   try {
-    store = await getStoreByCollection("Diamond");
+    store =
+      await getStoreByCollection(
+        "Diamond"
+      );
   } catch (error) {
-    console.error("Failed to load Diamond store:", error);
+    console.error(
+      "Failed to load Diamond store:",
+      error
+    );
   }
 
-  // =====================================================
-  // ACTIVE CATEGORIES
-  // =====================================================
+  /* =====================================================
+     LOAD DIAMOND HERO SLIDES
+  ===================================================== */
 
-  // Categories are shared between Gold and Diamond.
-  // The Categories collection does NOT have a collection field.
-  const activeCategories = categories.filter(
-    (item) => item.active
-  );
+  try {
+    heroSlides =
+      await getHeroSlides();
+  } catch (error) {
+    console.error(
+      "Failed to load Diamond hero slides:",
+      error
+    );
+  }
 
-  const selectedCategory = activeCategories.find(
-    (item) => item.id === category
-  );
+  /* =====================================================
+     ACTIVE DIAMOND HERO SLIDES
+  ===================================================== */
 
-  // =====================================================
-  // WHATSAPP
-  // =====================================================
+  const activeHeroSlides =
+    heroSlides
+      .filter(
+        (slide) =>
+          slide.active &&
+          slide.page === "Diamonds" &&
+          (
+            slide.videoUrl ||
+            slide.imageUrl
+          )
+      )
+      .sort(
+        (a, b) =>
+          a.order - b.order
+      );
 
-  const whatsappMessage = selectedCategory
-    ? `Hello, I am interested in your Diamond ${selectedCategory.name} Jewellery Collection.`
-    : "Hello, I would like to know more about your Diamond Jewellery Collection.";
+  /* =====================================================
+     ACTIVE CATEGORIES
+  ===================================================== */
 
-  const whatsappUrl = store?.whatsapp
-    ? `https://wa.me/${store.whatsapp}?text=${encodeURIComponent(
-        whatsappMessage
-      )}`
-    : "";
+  const activeCategories =
+    categories.filter(
+      (item) => item.active
+    );
+
+  const selectedCategory =
+    activeCategories.find(
+      (item) =>
+        item.id === category
+    );
+
+  /* =====================================================
+     WHATSAPP
+  ===================================================== */
+
+  const whatsappMessage =
+    selectedCategory
+      ? `Hello, I am interested in your Diamond ${selectedCategory.name} Jewellery Collection.`
+      : "Hello, I would like to know more about your Diamond Jewellery Collection.";
+
+  const whatsappUrl =
+    store?.whatsapp
+      ? `https://wa.me/${store.whatsapp}?text=${encodeURIComponent(
+          whatsappMessage
+        )}`
+      : "";
 
   return (
     <main className="min-h-screen bg-[#f8f5ef] text-[#1c1a17]">
 
       {/* =====================================================
-          HERO
+          DIAMOND HERO SLIDER
       ===================================================== */}
 
-      <section className="border-b border-[#e5ded2] bg-[#f1ece3]">
-        <div className="mx-auto max-w-[1400px] px-5 sm:px-8 lg:px-10">
-
-          <div className="flex min-h-[460px] items-center justify-center py-20 sm:min-h-[520px]">
-
-            <div className="max-w-3xl text-center">
-
-              <div className="flex items-center justify-center gap-3 sm:gap-4">
-
-                <span className="h-px w-8 bg-[#b08d57] sm:w-14" />
-
-                <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#b08d57] sm:text-xs sm:tracking-[0.4em]">
-                  The Diamond Collection
-                </p>
-
-                <span className="h-px w-8 bg-[#b08d57] sm:w-14" />
-
-              </div>
-
-              <h1 className="mt-7 font-display text-5xl font-normal leading-[1.05] tracking-[-0.03em] text-[#1c1a17] sm:text-6xl md:text-7xl">
-
-                Brilliant Diamonds
-
-                <span className="mt-2 block text-[#b08d57]">
-                  Timelessly Crafted
-                </span>
-
-              </h1>
-
-              <p className="mx-auto mt-7 max-w-2xl text-sm leading-7 text-[#777169] sm:text-base sm:leading-8">
-                Explore refined diamond jewellery designed
-                to celebrate life&apos;s most precious moments
-                with brilliance and elegance.
-              </p>
-
-              {selectedCategory && (
-                <div className="mt-7">
-
-                  <span className="inline-flex items-center border border-[#b08d57] bg-[#f8f5ef] px-4 py-2 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#b08d57] sm:text-[10px]">
-                    Showing: {selectedCategory.name}
-                  </span>
-
-                </div>
-              )}
-
-              <div className="mx-auto mt-8 flex items-center justify-center gap-3">
-
-                <span className="h-px w-10 bg-[#e5ded2]" />
-
-                <span className="text-sm text-[#b08d57]">
-                  ◇
-                </span>
-
-                <span className="h-px w-10 bg-[#e5ded2]" />
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-      </section>
+      <HeroSlider
+        slides={activeHeroSlides}
+      />
 
       {/* =====================================================
           CATEGORY FILTER
@@ -192,21 +196,23 @@ export default async function DiamondPage({
 
             {/* DIAMOND CATEGORIES */}
 
-            {activeCategories.map((item) => (
-              <Link
-                key={item.id}
-                href={`/diamond?category=${encodeURIComponent(
-                  item.id
-                )}`}
-                className={`border px-5 py-2.5 text-[9px] font-semibold uppercase tracking-[0.15em] transition-all duration-300 sm:text-[10px] ${
-                  category === item.id
-                    ? "border-[#b08d57] bg-[#b08d57] text-white"
-                    : "border-[#e5ded2] bg-[#f1ece3] text-[#777169] hover:border-[#b08d57] hover:text-[#b08d57]"
-                }`}
-              >
-                {item.name}
-              </Link>
-            ))}
+            {activeCategories.map(
+              (item) => (
+                <Link
+                  key={item.id}
+                  href={`/diamond?category=${encodeURIComponent(
+                    item.id
+                  )}`}
+                  className={`border px-5 py-2.5 text-[9px] font-semibold uppercase tracking-[0.15em] transition-all duration-300 sm:text-[10px] ${
+                    category === item.id
+                      ? "border-[#b08d57] bg-[#b08d57] text-white"
+                      : "border-[#e5ded2] bg-[#f1ece3] text-[#777169] hover:border-[#b08d57] hover:text-[#b08d57]"
+                  }`}
+                >
+                  {item.name}
+                </Link>
+              )
+            )}
 
           </div>
 
@@ -227,7 +233,8 @@ export default async function DiamondPage({
             <div>
 
               <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#b08d57] sm:text-xs">
-                {selectedCategory?.name || "Explore"}
+                {selectedCategory?.name ||
+                  "Explore"}
               </p>
 
               <h2 className="mt-2 font-display text-3xl font-normal text-[#1c1a17] sm:text-4xl">
@@ -260,9 +267,7 @@ export default async function DiamondPage({
 
           </div>
 
-          {/* =================================================
-              PRODUCTS / EMPTY STATE
-          ================================================= */}
+          {/* PRODUCTS */}
 
           {products.length === 0 ? (
 
@@ -297,12 +302,14 @@ export default async function DiamondPage({
 
             <div className="grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-2 sm:gap-6 md:grid-cols-3 lg:grid-cols-4">
 
-              {products.map((product) => (
-                <DiamondProductCard
-                  key={product.id}
-                  product={product}
-                />
-              ))}
+              {products.map(
+                (product) => (
+                  <DiamondProductCard
+                    key={product.id}
+                    product={product}
+                  />
+                )
+              )}
 
             </div>
 
@@ -346,7 +353,8 @@ export default async function DiamondPage({
             </p>
 
             <h3 className="mt-4 font-display text-3xl font-normal text-[#1c1a17] sm:text-4xl">
-              {store?.name || "Mahalaxmi Diamond Store"}
+              {store?.name ||
+                "Mahalaxmi Diamond Store"}
             </h3>
 
             <div className="mt-5 h-px w-10 bg-[#b08d57]" />
@@ -498,9 +506,11 @@ function DiamondProductCard({
           />
         ) : (
           <div className="flex h-full items-center justify-center">
+
             <span className="text-5xl text-[#b08d57]">
               ◇
             </span>
+
           </div>
         )}
 
@@ -519,7 +529,8 @@ function DiamondProductCard({
       <div className="pt-4">
 
         <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#b08d57] sm:text-[10px]">
-          {product.categoryName || "Diamond Jewellery"}
+          {product.categoryName ||
+            "Diamond Jewellery"}
         </p>
 
         <h3 className="mt-1.5 line-clamp-2 font-display text-base font-normal leading-6 text-[#1c1a17] transition-colors group-hover:text-[#b08d57] sm:text-lg">

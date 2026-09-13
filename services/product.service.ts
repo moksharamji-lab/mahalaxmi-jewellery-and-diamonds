@@ -186,21 +186,39 @@ function mapProduct(
       brandName
     ),
 
-    purity: String(
-      record.purity ?? ""
-    ),
+   purity: String(
+  record.purity ?? ""
+),
 
-    weight: Number(
-      record.weight ?? 0
-    ),
+// Gold product details
+hyd: String(
+  record.hyd ?? ""
+),
 
-    makingCharges: Number(
-      record.makingCharges ?? 0
-    ),
+hallmark: String(
+  record.hallmark ?? ""
+),
 
-    description: String(
-      record.description ?? ""
-    ),
+// Diamond product details
+igi: String(
+  record.igi ?? ""
+),
+
+sgl: String(
+  record.sgl ?? ""
+),
+
+weight: Number(
+  record.weight ?? 0
+),
+
+makingCharges: Number(
+  record.makingCharges ?? 0
+),
+
+description: String(
+  record.description ?? ""
+),
 
     featured: Boolean(
       record.featured

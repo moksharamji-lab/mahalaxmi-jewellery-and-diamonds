@@ -8,10 +8,22 @@ export interface Product {
   categoryName: string;
   brandName: string;
   collectionId: string;
+
+  // Common product details
   purity: string;
+  description: string;
+
+  // Gold product details
+  hyd: string;
+  hallmark: string;
+
+  // Diamond product details
+  igi: string;
+  sgl: string;
+
+  // Existing fields
   weight: number;
   makingCharges: number;
-  description: string;
   featured: boolean;
   active: boolean;
   images: string[];
