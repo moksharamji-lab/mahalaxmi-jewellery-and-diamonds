@@ -8,6 +8,7 @@ import {
 } from "@/lib/auth-config";
 
 import { getAuthenticatedAdminClient } from "@/lib/admin-pocketbase";
+
 import { getAdminResource } from "@/lib/admin-resources";
 
 import {
@@ -18,7 +19,12 @@ import {
 import {
   drive,
   getDriveFolder,
+  deleteDriveFiles,
 } from "@/lib/google-drive";
+
+import {
+  detectSupportedMimeType,
+} from "@/lib/file-signature";
 
 type Props = {
   params: Promise<{
@@ -26,21 +32,35 @@ type Props = {
   }>;
 };
 
+/* =========================================================
+   RESPONSE HELPERS
+========================================================= */
+
 function unauthorizedResponse() {
   return NextResponse.json(
-    { message: "Unauthorized." },
-    { status: 401 }
+    {
+      message: "Unauthorized.",
+    },
+    {
+      status: 401,
+    }
   );
 }
 
 function errorResponse(error: unknown) {
-  console.error("Admin create error:", error);
+  console.error(
+    "Admin create error:",
+    error
+  );
 
   return NextResponse.json(
     {
-      message: "Unable to save this record.",
+      message:
+        "Unable to save this record.",
     },
-    { status: 400 }
+    {
+      status: 400,
+    }
   );
 }
 
@@ -90,13 +110,14 @@ function getDriveFolderName(
   formData: FormData
 ): string | null {
   if (resource === "Products") {
-    const collectionValue = String(
-      formData.get("collection") ??
-        formData.get("collectionId") ??
-        ""
-    )
-      .trim()
-      .toLowerCase();
+    const collectionValue =
+      String(
+        formData.get("collection") ??
+          formData.get("collectionId") ??
+          ""
+      )
+        .trim()
+        .toLowerCase();
 
     if (
       collectionValue === "diamond" ||
@@ -143,10 +164,10 @@ const VIDEO_MIME_TYPES = new Set([
 ]);
 
 const MAX_IMAGE_SIZE =
-  10 * 1024 * 1024; // 10 MB
+  10 * 1024 * 1024;
 
 const MAX_VIDEO_SIZE =
-  100 * 1024 * 1024; // 100 MB
+  100 * 1024 * 1024;
 
 /* =========================================================
    GOOGLE DRIVE UPLOAD
@@ -159,7 +180,9 @@ async function uploadFileToDrive(
   maxSizeBytes: number
 ) {
   if (!(file instanceof File)) {
-    throw new Error("Invalid upload.");
+    throw new Error(
+      "Invalid upload."
+    );
   }
 
   if (file.size <= 0) {
@@ -174,14 +197,35 @@ async function uploadFileToDrive(
     );
   }
 
-  if (!allowedMimeTypes.has(file.type)) {
+  /*
+   * IMPORTANT:
+   *
+   * Do not trust file.type.
+   *
+   * file.type is supplied by the client/browser.
+   *
+   * We inspect the actual file signature instead.
+   */
+  const detectedMimeType =
+    await detectSupportedMimeType(
+      file
+    );
+
+  if (
+    !detectedMimeType ||
+    !allowedMimeTypes.has(
+      detectedMimeType
+    )
+  ) {
     throw new Error(
       "Unsupported file type."
     );
   }
 
   const folder =
-    await getDriveFolder(folderName);
+    await getDriveFolder(
+      folderName
+    );
 
   if (!folder?.id) {
     throw new Error(
@@ -189,9 +233,10 @@ async function uploadFileToDrive(
     );
   }
 
-  const buffer = Buffer.from(
-    await file.arrayBuffer()
-  );
+  const buffer =
+    Buffer.from(
+      await file.arrayBuffer()
+    );
 
   const uploadedFile =
     await drive.files.create({
@@ -201,8 +246,11 @@ async function uploadFileToDrive(
       },
 
       media: {
-        mimeType: file.type,
-        body: Readable.from(buffer),
+        mimeType:
+          detectedMimeType,
+
+        body:
+          Readable.from(buffer),
       },
 
       fields:
@@ -216,13 +264,16 @@ async function uploadFileToDrive(
   }
 
   return {
-    id: uploadedFile.data.id,
+    id:
+      uploadedFile.data.id,
+
     name:
       uploadedFile.data.name ??
       file.name,
+
     mimeType:
       uploadedFile.data.mimeType ??
-      file.type,
+      detectedMimeType,
   };
 }
 
@@ -331,7 +382,8 @@ async function resolveCollectionId(
   const directMatch =
     collections.rows.find(
       (row) =>
-        String(row.$id) === raw
+        String(row.$id) ===
+        raw
     );
 
   if (directMatch) {
@@ -343,7 +395,9 @@ async function resolveCollectionId(
   const nameMatch =
     collections.rows.find(
       (row) =>
-        String(row.name ?? "")
+        String(
+          row.name ?? ""
+        )
           .trim()
           .toLowerCase() ===
         raw
@@ -352,7 +406,9 @@ async function resolveCollectionId(
     );
 
   return nameMatch
-    ? String(nameMatch.$id)
+    ? String(
+        nameMatch.$id
+      )
     : undefined;
 }
 
@@ -401,11 +457,15 @@ async function buildAppwriteData(
           "active"
         );
 
-      if (name !== undefined) {
+      if (
+        name !== undefined
+      ) {
         data.name = name;
       }
 
-      if (slug !== undefined) {
+      if (
+        slug !== undefined
+      ) {
         data.slug = slug;
       }
 
@@ -417,17 +477,15 @@ async function buildAppwriteData(
           categoryCollection;
       }
 
-      if (active !== undefined) {
+      if (
+        active !== undefined
+      ) {
         data.active = active;
       }
 
       /*
-       * sortOrder is required in the
-       * Appwrite categories table.
-       *
-       * The current CategoryForm does
-       * not have a sortOrder field, so
-       * new categories start at 0.
+       * sortOrder is required by
+       * the Appwrite categories table.
        */
       data.sortOrder = 0;
 
@@ -470,15 +528,21 @@ async function buildAppwriteData(
           "active"
         );
 
-      if (name !== undefined) {
+      if (
+        name !== undefined
+      ) {
         data.name = name;
       }
 
-      if (slug !== undefined) {
+      if (
+        slug !== undefined
+      ) {
         data.slug = slug;
       }
 
-      if (active !== undefined) {
+      if (
+        active !== undefined
+      ) {
         data.active = active;
       }
 
@@ -561,13 +625,14 @@ async function buildAppwriteData(
           "active"
         );
 
-      if (name !== undefined) {
+      if (
+        name !== undefined
+      ) {
         data.name = name;
       }
 
       if (
-        storeType !==
-        undefined
+        storeType !== undefined
       ) {
         data.storeType =
           storeType;
@@ -602,7 +667,9 @@ async function buildAppwriteData(
           googleMapsUrl;
       }
 
-      if (email !== undefined) {
+      if (
+        email !== undefined
+      ) {
         data.email = email;
       }
 
@@ -614,7 +681,9 @@ async function buildAppwriteData(
           description;
       }
 
-      if (active !== undefined) {
+      if (
+        active !== undefined
+      ) {
         data.active = active;
       }
 
@@ -678,32 +747,26 @@ async function buildAppwriteData(
       }
 
       if (
-        purity !==
-        undefined
+        purity !== undefined
       ) {
         data.purity =
           purity;
       }
 
       if (
-        rate !==
-        undefined
+        rate !== undefined
       ) {
-        data.rate =
-          rate;
+        data.rate = rate;
       }
 
       if (
-        unit !==
-        undefined
+        unit !== undefined
       ) {
-        data.unit =
-          unit;
+        data.unit = unit;
       }
 
       if (
-        active !==
-        undefined
+        active !== undefined
       ) {
         data.active =
           active;
@@ -770,51 +833,56 @@ async function buildAppwriteData(
           "order"
         );
 
-      if (title !== undefined) {
+      if (
+        title !== undefined
+      ) {
         data.title = title;
       }
 
       if (
-        subtitle !==
-        undefined
+        subtitle !== undefined
       ) {
         data.subtitle =
           subtitle;
       }
 
       if (
-        buttonText !==
-        undefined
+        buttonText !== undefined
       ) {
         data.buttonText =
           buttonText;
       }
 
       if (
-        buttonLink !==
-        undefined
+        buttonLink !== undefined
       ) {
         data.buttonLink =
           buttonLink;
       }
 
-      if (page !== undefined) {
+      if (
+        page !== undefined
+      ) {
         data.page = page;
       }
 
       if (
-        mediaType !==
-        undefined
+        mediaType !== undefined
       ) {
         data.mediaType =
           mediaType;
       }
 
-      if (active !== undefined) {
-        data.active = active;
+      if (
+        active !== undefined
+      ) {
+        data.active =
+          active;
       }
 
-      if (order !== undefined) {
+      if (
+        order !== undefined
+      ) {
         data.order = order;
       }
 
@@ -931,63 +999,77 @@ async function buildAppwriteData(
           "active"
         );
 
-      if (name !== undefined) {
+      if (
+        name !== undefined
+      ) {
         data.name = name;
       }
 
-      if (slug !== undefined) {
+      if (
+        slug !== undefined
+      ) {
         data.slug = slug;
       }
 
       if (
-        categoryId !==
-        undefined
+        categoryId !== undefined
       ) {
         data.categoryId =
           categoryId;
       }
 
       if (
-        collectionId !==
-        undefined
+        collectionId !== undefined
       ) {
         data.collectionId =
           collectionId;
       }
 
-      if (purity !== undefined) {
+      if (
+        purity !== undefined
+      ) {
         data.purity = purity;
       }
 
       if (
-        description !==
-        undefined
+        description !== undefined
       ) {
         data.description =
           description;
       }
 
-      if (hyd !== undefined) {
+      if (
+        hyd !== undefined
+      ) {
         data.hyd = hyd;
       }
 
       if (
-        hallmark !==
-        undefined
+        hallmark !== undefined
       ) {
         data.hallmark =
           hallmark;
       }
 
-      if (igi !== undefined) {
+      if (
+        igi !== undefined
+      ) {
         data.igi = igi;
       }
 
-      if (sgl !== undefined) {
+      if (
+        sgl !== undefined
+      ) {
         data.sgl = sgl;
       }
 
-      if (weight !== undefined) {
+      /*
+       * Keep these legacy database
+       * fields for compatibility.
+       */
+      if (
+        weight !== undefined
+      ) {
         data.weight = weight;
       }
 
@@ -1000,14 +1082,15 @@ async function buildAppwriteData(
       }
 
       if (
-        featured !==
-        undefined
+        featured !== undefined
       ) {
         data.featured =
           featured;
       }
 
-      if (active !== undefined) {
+      if (
+        active !== undefined
+      ) {
         data.active = active;
       }
 
@@ -1055,8 +1138,7 @@ async function buildAppwriteData(
           );
 
         if (
-          value !==
-          undefined
+          value !== undefined
         ) {
           data[field] =
             value;
@@ -1069,7 +1151,9 @@ async function buildAppwriteData(
           "active"
         );
 
-      if (active !== undefined) {
+      if (
+        active !== undefined
+      ) {
         data.active = active;
       }
 
@@ -1107,8 +1191,7 @@ async function buildAppwriteData(
           );
 
         if (
-          value !==
-          undefined
+          value !== undefined
         ) {
           data[field] =
             value;
@@ -1145,7 +1228,9 @@ export async function POST(
         message:
           "Unknown resource.",
       },
-      { status: 404 }
+      {
+        status: 404,
+      }
     );
   }
 
@@ -1160,16 +1245,24 @@ export async function POST(
         message:
           `Resource "${collection}" is not migrated to Appwrite yet.`,
       },
-      { status: 400 }
+      {
+        status: 400,
+      }
     );
   }
 
+  /*
+   * AUTHENTICATE BEFORE
+   * processing uploads.
+   */
   const adminClient =
     await getAuthenticatedAdminClient();
 
   if (!adminClient) {
     return unauthorizedResponse();
   }
+
+  const uploadedDriveFileIds: string[] = [];
 
   try {
     const originalFormData =
@@ -1188,23 +1281,22 @@ export async function POST(
     const driveImageIds: string[] =
       [];
 
-    let driveVideoId = "";
+    let driveVideoId =
+      "";
 
     if (driveFolderName) {
       /*
        * Accept both:
        *
-       *   images
-       *   image
-       *
-       * This makes Hero uploads compatible
-       * with either field name.
+       * images
+       * image
        */
 
       const imageFiles = [
         ...originalFormData.getAll(
           "images"
         ),
+
         ...originalFormData.getAll(
           "image"
         ),
@@ -1219,7 +1311,9 @@ export async function POST(
           continue;
         }
 
-        if (item.size === 0) {
+        if (
+          item.size === 0
+        ) {
           continue;
         }
 
@@ -1232,6 +1326,10 @@ export async function POST(
           );
 
         driveImageIds.push(
+          uploaded.id
+        );
+
+        uploadedDriveFileIds.push(
           uploaded.id
         );
       }
@@ -1255,6 +1353,10 @@ export async function POST(
 
         driveVideoId =
           uploaded.id;
+
+        uploadedDriveFileIds.push(
+          uploaded.id
+        );
       }
     }
 
@@ -1277,7 +1379,8 @@ export async function POST(
 
         tableId,
 
-        rowId: ID.unique(),
+        rowId:
+          ID.unique(),
 
         data,
       });
@@ -1285,7 +1388,9 @@ export async function POST(
     const response =
       NextResponse.json(
         record,
-        { status: 201 }
+        {
+          status: 201,
+        }
       );
 
     response.cookies.set(
@@ -1296,6 +1401,12 @@ export async function POST(
 
     return response;
   } catch (error) {
-    return errorResponse(error);
+    await deleteDriveFiles(
+      uploadedDriveFileIds
+    );
+
+    return errorResponse(
+      error
+    );
   }
 }

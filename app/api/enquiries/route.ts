@@ -30,27 +30,42 @@ const enquirySchema = z.object({
     .string()
     .trim()
     .max(150, "Email is too long.")
+    .refine(
+      (value) =>
+        value === "" ||
+        z.string().email().safeParse(value).success,
+      "Enter a valid email address."
+    )
     .optional()
     .or(z.literal("")),
 
   product: z
     .string()
     .trim()
-    .max(150, "Product name is too long.")
+    .max(
+      150,
+      "Product name is too long."
+    )
     .optional()
     .or(z.literal("")),
 
   productSlug: z
     .string()
     .trim()
-    .max(200, "Product slug is too long.")
+    .max(
+      200,
+      "Product slug is too long."
+    )
     .optional()
     .or(z.literal("")),
 
   collection: z
     .string()
     .trim()
-    .max(50, "Collection is too long.")
+    .max(
+      50,
+      "Collection is too long."
+    )
     .optional()
     .or(z.literal("")),
 
@@ -87,6 +102,7 @@ export async function POST(
       return NextResponse.json(
         {
           error:
+            result.error.issues[0]?.message ??
             "Please enter valid enquiry details.",
         },
         {
@@ -151,6 +167,10 @@ export async function POST(
       }
     );
   } catch (error) {
+    /*
+     * Keep database/provider details server-side.
+     * Never return the internal error to the browser.
+     */
     console.error(
       "Enquiry submission error:",
       error

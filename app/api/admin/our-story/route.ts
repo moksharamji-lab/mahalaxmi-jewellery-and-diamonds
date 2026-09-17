@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import {
-  ADMIN_AUTH_COOKIE,
-  ADMIN_AUTH_COOKIE_OPTIONS,
-} from "@/lib/auth-config";
-
 import { getAuthenticatedAdminClient } from "@/lib/admin-pocketbase";
 
 import {
@@ -14,11 +9,31 @@ import {
 } from "@/lib/appwrite";
 
 const updateOurStorySchema = z.object({
-  title: z.string().trim().min(1, "Our Story title is required."),
-  paragraphOne: z.string().trim().min(1, "First paragraph is required."),
-  paragraphTwo: z.string().trim().min(1, "Second paragraph is required."),
-  buttonText: z.string().trim().min(1, "Button text is required."),
-  buttonLink: z.string().trim().min(1, "Button link is required."),
+  title: z
+    .string()
+    .trim()
+    .min(1, "Our Story title is required."),
+
+  paragraphOne: z
+    .string()
+    .trim()
+    .min(1, "First paragraph is required."),
+
+  paragraphTwo: z
+    .string()
+    .trim()
+    .min(1, "Second paragraph is required."),
+
+  buttonText: z
+    .string()
+    .trim()
+    .min(1, "Button text is required."),
+
+  buttonLink: z
+    .string()
+    .trim()
+    .min(1, "Button link is required."),
+
   active: z.boolean(),
 });
 
@@ -71,7 +86,7 @@ export async function PUT(request: Request) {
       });
     }
 
-    const response = NextResponse.json({
+    return NextResponse.json({
       success: true,
       story: {
         id: String(updatedStory.$id),
@@ -79,14 +94,6 @@ export async function PUT(request: Request) {
         active: Boolean(updatedStory.active),
       },
     });
-
-    response.cookies.set(
-      ADMIN_AUTH_COOKIE,
-      admin.refreshedToken,
-      ADMIN_AUTH_COOKIE_OPTIONS
-    );
-
-    return response;
   } catch (error) {
     console.error("Failed to update Our Story:", error);
 

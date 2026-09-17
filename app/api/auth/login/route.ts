@@ -34,6 +34,8 @@ const apiKey = getRequiredEnv(
   "APPWRITE_API_KEY"
 );
 
+const ADMIN_LABEL = "admin";
+
 export async function POST(request: Request) {
   try {
     const body = await request.json().catch(() => null);
@@ -77,10 +79,49 @@ export async function POST(request: Request) {
       );
     }
 
+    /*
+     * Verify the newly created session belongs to an
+     * Appwrite user with the required admin label.
+     */
+    const sessionClient = new Client()
+      .setEndpoint(endpoint)
+      .setProject(projectId)
+      .setSession(sessionSecret);
+
+    const sessionAccount = new Account(sessionClient);
+    const user = await sessionAccount.get();
+
+    const labels = Array.isArray(user.labels)
+      ? user.labels
+      : [];
+
+    if (!labels.includes(ADMIN_LABEL)) {
+      /*
+       * The credentials are valid, but the account is not
+       * authorized for the admin area. Delete the newly
+       * created Appwrite session immediately.
+       */
+      try {
+        await sessionAccount.deleteSession("current");
+      } catch (deleteError) {
+        console.error(
+          "Failed to delete unauthorized Appwrite session:",
+          deleteError
+        );
+      }
+
+      return NextResponse.json(
+        {
+          message: "You are not authorized to access the admin area.",
+        },
+        { status: 403 }
+      );
+    }
+
     const response = NextResponse.json(
       {
         success: true,
-        email: credentials.data.email,
+        email: user.email,
       },
       { status: 200 }
     );

@@ -4,9 +4,11 @@ import { cookies } from "next/headers";
 import { Account, Client } from "node-appwrite";
 
 import {
-  ADMIN_AUTH_COOKIE,
-  ADMIN_AUTH_COOKIE_OPTIONS,
+  ADMIN_AUTH_COOKIE as AUTH_COOKIE,
+  ADMIN_AUTH_COOKIE_OPTIONS as AUTH_COOKIE_OPTIONS,
 } from "@/lib/auth-config";
+
+const ADMIN_LABEL = "admin";
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name];
@@ -29,9 +31,7 @@ const projectId = getRequiredEnv(
 export async function getAuthenticatedAdminClient() {
   const cookieStore = await cookies();
 
-  const token = cookieStore.get(
-    ADMIN_AUTH_COOKIE
-  )?.value;
+  const token = cookieStore.get(AUTH_COOKIE)?.value;
 
   if (!token) {
     return null;
@@ -47,6 +47,14 @@ export async function getAuthenticatedAdminClient() {
 
     const user = await account.get();
 
+    const labels = Array.isArray(user.labels)
+      ? user.labels
+      : [];
+
+    if (!labels.includes(ADMIN_LABEL)) {
+      return null;
+    }
+
     return {
       account,
       user,
@@ -58,6 +66,6 @@ export async function getAuthenticatedAdminClient() {
 }
 
 export {
-  ADMIN_AUTH_COOKIE,
-  ADMIN_AUTH_COOKIE_OPTIONS,
+  AUTH_COOKIE as ADMIN_AUTH_COOKIE,
+  AUTH_COOKIE_OPTIONS as ADMIN_AUTH_COOKIE_OPTIONS,
 };

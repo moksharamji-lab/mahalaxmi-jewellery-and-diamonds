@@ -2,11 +2,6 @@ import { NextResponse } from "next/server";
 import { Readable } from "stream";
 import { z } from "zod";
 
-import {
-  ADMIN_AUTH_COOKIE,
-  ADMIN_AUTH_COOKIE_OPTIONS,
-} from "@/lib/auth-config";
-
 import { getAuthenticatedAdminClient } from "@/lib/admin-pocketbase";
 
 import {
@@ -17,6 +12,7 @@ import {
 import {
   drive,
   getDriveFolder,
+  deleteDriveFiles,
 } from "@/lib/google-drive";
 
 /* =========================================================
@@ -70,10 +66,7 @@ const updateStoreSchema = z.object({
   description: z
     .string()
     .trim()
-    .max(
-      2000,
-      "Description is too long."
-    ),
+    .max(2000, "Description is too long."),
 
   active: z.boolean(),
 });
@@ -88,58 +81,38 @@ type RouteContext = {
    LOGO UPLOAD SECURITY
 ========================================================= */
 
-const ALLOWED_LOGO_MIME_TYPES =
-  new Set([
-    "image/jpeg",
-    "image/png",
-    "image/webp",
-  ]);
+const ALLOWED_LOGO_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+]);
 
-const MAX_LOGO_SIZE =
-  10 * 1024 * 1024; // 10 MB
+const MAX_LOGO_SIZE = 10 * 1024 * 1024;
 
 /* =========================================================
    GOOGLE DRIVE LOGO UPLOAD
 ========================================================= */
 
-async function uploadLogoToDrive(
-  file: File
-) {
+async function uploadLogoToDrive(file: File) {
   if (!(file instanceof File)) {
-    throw new Error(
-      "Invalid logo upload."
-    );
+    throw new Error("Invalid logo upload.");
   }
 
   if (file.size <= 0) {
-    throw new Error(
-      "Uploaded logo is empty."
-    );
+    throw new Error("Uploaded logo is empty.");
   }
 
-  if (
-    file.size >
-    MAX_LOGO_SIZE
-  ) {
+  if (file.size > MAX_LOGO_SIZE) {
     throw new Error(
       "Uploaded logo exceeds the allowed size."
     );
   }
 
-  if (
-    !ALLOWED_LOGO_MIME_TYPES.has(
-      file.type
-    )
-  ) {
-    throw new Error(
-      "Unsupported logo file type."
-    );
+  if (!ALLOWED_LOGO_MIME_TYPES.has(file.type)) {
+    throw new Error("Unsupported logo file type.");
   }
 
-  const folder =
-    await getDriveFolder(
-      "Categories"
-    );
+  const folder = await getDriveFolder("Categories");
 
   if (!folder?.id) {
     throw new Error(
@@ -147,39 +120,32 @@ async function uploadLogoToDrive(
     );
   }
 
-  const buffer =
-    Buffer.from(
-      await file.arrayBuffer()
-    );
+  const buffer = Buffer.from(
+    await file.arrayBuffer()
+  );
 
-  const uploadedFile =
-    await drive.files.create({
-      requestBody: {
-        name: file.name,
-        parents: [folder.id],
-      },
+  const uploadedFile = await drive.files.create({
+    requestBody: {
+      name: file.name,
+      parents: [folder.id],
+    },
 
-      media: {
-        mimeType: file.type,
-        body: Readable.from(buffer),
-      },
+    media: {
+      mimeType: file.type,
+      body: Readable.from(buffer),
+    },
 
-      fields:
-        "id,name,mimeType,size",
-    });
+    fields: "id,name,mimeType,size",
+  });
 
-  if (
-    !uploadedFile.data.id
-  ) {
+  if (!uploadedFile.data.id) {
     throw new Error(
       "Google Drive did not return a file ID."
     );
   }
 
   return {
-    id:
-      uploadedFile.data.id,
-
+    id: uploadedFile.data.id,
     name:
       uploadedFile.data.name ??
       file.name,
@@ -194,8 +160,7 @@ function formValue(
   formData: FormData,
   key: string
 ): string {
-  const value =
-    formData.get(key);
+  const value = formData.get(key);
 
   if (value === null) {
     return "";
@@ -212,11 +177,10 @@ function booleanValue(
   formData: FormData,
   key: string
 ): boolean {
-  const value =
-    formValue(
-      formData,
-      key
-    );
+  const value = formValue(
+    formData,
+    key
+  );
 
   return (
     value === "true" ||
@@ -233,15 +197,20 @@ export async function PUT(
   request: Request,
   context: RouteContext
 ) {
+  /*
+   * Track only files uploaded during this request.
+   * If a later database operation fails, these files
+   * can safely be deleted without touching existing media.
+   */
+  const uploadedDriveFileIds: string[] = [];
+
   try {
-    const { id } =
-      await context.params;
+    const { id } = await context.params;
 
     if (!id) {
       return NextResponse.json(
         {
-          message:
-            "Store ID is required.",
+          message: "Store ID is required.",
         },
         {
           status: 400,
@@ -250,8 +219,8 @@ export async function PUT(
     }
 
     /*
-     * Authenticate before processing
-     * uploaded files or modifying data.
+     * Authenticate before processing uploaded files
+     * or modifying Appwrite data.
      */
     const admin =
       await getAuthenticatedAdminClient();
@@ -259,8 +228,7 @@ export async function PUT(
     if (!admin) {
       return NextResponse.json(
         {
-          message:
-            "Unauthorized.",
+          message: "Unauthorized.",
         },
         {
           status: 401,
@@ -289,8 +257,11 @@ export async function PUT(
           logoItem
         );
 
-      driveLogoId =
-        uploaded.id;
+      driveLogoId = uploaded.id;
+
+      uploadedDriveFileIds.push(
+        uploaded.id
+      );
     }
 
     /* =====================================================
@@ -345,6 +316,10 @@ export async function PUT(
       });
 
     if (!parsed.success) {
+      await deleteDriveFiles(
+        uploadedDriveFileIds
+      );
+
       return NextResponse.json(
         {
           message:
@@ -409,7 +384,8 @@ export async function PUT(
         tableId:
           "stores",
 
-        rowId: id,
+        rowId:
+          id,
 
         data,
       });
@@ -418,58 +394,54 @@ export async function PUT(
        RESPONSE
     ===================================================== */
 
-    const response =
-      NextResponse.json({
-        success: true,
+    return NextResponse.json({
+      success: true,
 
-        store: {
-          id: String(
-            updatedStore.$id
-          ),
+      store: {
+        id: String(
+          updatedStore.$id
+        ),
 
-          name: String(
-            updatedStore.name ??
+        name: String(
+          updatedStore.name ??
+            ""
+        ),
+
+        collection:
+          String(
+            updatedStore.storeType ??
               ""
           ),
 
-          collection:
-            String(
-              updatedStore.storeType ??
-                ""
-            ),
+        active:
+          Boolean(
+            updatedStore.active
+          ),
 
-          active:
-            Boolean(
-              updatedStore.active
-            ),
+        driveLogo:
+          String(
+            updatedStore.driveLogo ??
+              ""
+          ),
 
-          driveLogo:
-            String(
-              updatedStore.driveLogo ??
-                ""
-            ),
-
-          whatsappUrl:
-            String(
-              updatedStore.whatsappUrl ??
-                ""
-            ),
-        },
-      });
-
-    response.cookies.set(
-      ADMIN_AUTH_COOKIE,
-      admin.refreshedToken,
-      ADMIN_AUTH_COOKIE_OPTIONS
-    );
-
-    return response;
+        whatsappUrl:
+          String(
+            updatedStore.whatsappUrl ??
+              ""
+          ),
+      },
+    });
   } catch (error) {
     /*
-     * Log the real error server-side,
-     * but never expose internal details
-     * to the browser.
+     * If Drive upload succeeded but a later operation failed,
+     * remove only the files created by this request.
+     *
+     * Existing store logos are never deleted here.
      */
+    await deleteDriveFiles(
+      uploadedDriveFileIds
+    );
+
     console.error(
       "Failed to update store:",
       error

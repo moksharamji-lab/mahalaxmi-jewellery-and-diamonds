@@ -23,7 +23,12 @@ import {
 import {
   drive,
   getDriveFolder,
+  deleteDriveFiles,
 } from "@/lib/google-drive";
+
+import {
+  detectSupportedMimeType,
+} from "@/lib/file-signature";
 
 type Props = {
   params: Promise<{
@@ -31,10 +36,6 @@ type Props = {
     id: string;
   }>;
 };
-
-/* =========================================================
-   RESPONSE HELPERS
-========================================================= */
 
 function unauthorizedResponse() {
   return NextResponse.json(
@@ -63,10 +64,6 @@ function errorResponse(error: unknown) {
     }
   );
 }
-
-/* =========================================================
-   APPWRITE TABLE
-========================================================= */
 
 function getAppwriteTableId(
   resource: string
@@ -101,26 +98,29 @@ function getAppwriteTableId(
   }
 }
 
-/* =========================================================
-   GOOGLE DRIVE FOLDER
-========================================================= */
-
 function getDriveFolderName(
-  collection: string,
+  resource: string,
   formData: FormData
-) {
-  if (collection === "Products") {
+): string | null {
+  if (
+    resource === "Products"
+  ) {
     const collectionValue =
       String(
-        formData.get("collection") ??
-          formData.get("collectionId") ??
+        formData.get(
+          "collection"
+        ) ??
+          formData.get(
+            "collectionId"
+          ) ??
           ""
       )
         .trim()
         .toLowerCase();
 
     if (
-      collectionValue === "diamond" ||
+      collectionValue ===
+        "diamond" ||
       collectionValue.includes(
         "diamond"
       )
@@ -132,19 +132,22 @@ function getDriveFolderName(
   }
 
   if (
-    collection === "HeroSliders"
+    resource ===
+    "HeroSliders"
   ) {
     return "Hero";
   }
 
   if (
-    collection === "Categories"
+    resource ===
+    "Categories"
   ) {
     return "Categories";
   }
 
   if (
-    collection === "Collections"
+    resource ===
+    "Collections"
   ) {
     return "Categories";
   }
@@ -152,20 +155,18 @@ function getDriveFolderName(
   return null;
 }
 
-/* =========================================================
-   UPLOAD SECURITY
-========================================================= */
+const IMAGE_MIME_TYPES =
+  new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+  ]);
 
-const IMAGE_MIME_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-];
-
-const VIDEO_MIME_TYPES = [
-  "video/mp4",
-  "video/webm",
-];
+const VIDEO_MIME_TYPES =
+  new Set([
+    "video/mp4",
+    "video/webm",
+  ]);
 
 const MAX_IMAGE_SIZE =
   10 * 1024 * 1024;
@@ -173,23 +174,23 @@ const MAX_IMAGE_SIZE =
 const MAX_VIDEO_SIZE =
   100 * 1024 * 1024;
 
-/* =========================================================
-   GOOGLE DRIVE UPLOAD
-========================================================= */
-
 async function uploadFileToDrive(
   file: File,
   folderName: string,
-  allowedMimeTypes: string[],
+  allowedMimeTypes: Set<string>,
   maxSizeBytes: number
 ) {
-  if (!(file instanceof File)) {
+  if (
+    !(file instanceof File)
+  ) {
     throw new Error(
       "Invalid upload."
     );
   }
 
-  if (file.size <= 0) {
+  if (
+    file.size <= 0
+  ) {
     throw new Error(
       "The uploaded file is empty."
     );
@@ -208,9 +209,15 @@ async function uploadFileToDrive(
     );
   }
 
+  const detectedMimeType =
+    await detectSupportedMimeType(
+      file
+    );
+
   if (
-    !allowedMimeTypes.includes(
-      file.type
+    !detectedMimeType ||
+    !allowedMimeTypes.has(
+      detectedMimeType
     )
   ) {
     throw new Error(
@@ -223,7 +230,9 @@ async function uploadFileToDrive(
       folderName
     );
 
-  if (!folder?.id) {
+  if (
+    !folder?.id
+  ) {
     throw new Error(
       `Google Drive folder "${folderName}" was not found.`
     );
@@ -237,7 +246,9 @@ async function uploadFileToDrive(
   const uploadedFile =
     await drive.files.create({
       requestBody: {
-        name: file.name,
+        name:
+          file.name,
+
         parents: [
           folder.id,
         ],
@@ -245,11 +256,12 @@ async function uploadFileToDrive(
 
       media: {
         mimeType:
-          file.type,
+          detectedMimeType,
 
-        body: Readable.from(
-          buffer
-        ),
+        body:
+          Readable.from(
+            buffer
+          ),
       },
 
       fields:
@@ -271,12 +283,12 @@ async function uploadFileToDrive(
     name:
       uploadedFile.data.name ??
       file.name,
+
+    mimeType:
+      uploadedFile.data.mimeType ??
+      detectedMimeType,
   };
 }
-
-/* =========================================================
-   FORM HELPERS
-========================================================= */
 
 function formValue(
   formData: FormData,
@@ -285,7 +297,9 @@ function formValue(
   const value =
     formData.get(key);
 
-  if (value === null) {
+  if (
+    value === null
+  ) {
     return undefined;
   }
 
@@ -341,14 +355,12 @@ function numberValue(
   const number =
     Number(value);
 
-  return Number.isNaN(number)
+  return Number.isNaN(
+    number
+  )
     ? undefined
     : number;
 }
-
-/* =========================================================
-   COLLECTION ID
-========================================================= */
 
 async function resolveCollectionId(
   formData: FormData
@@ -413,10 +425,6 @@ async function resolveCollectionId(
     : undefined;
 }
 
-/* =========================================================
-   BUILD APPWRITE DATA
-========================================================= */
-
 async function buildAppwriteData(
   resource: string,
   formData: FormData,
@@ -429,10 +437,6 @@ async function buildAppwriteData(
   > = {};
 
   switch (resource) {
-    /* =====================================================
-       CATEGORIES
-    ===================================================== */
-
     case "Categories": {
       const fields = [
         "name",
@@ -481,10 +485,6 @@ async function buildAppwriteData(
       break;
     }
 
-    /* =====================================================
-       COLLECTIONS
-    ===================================================== */
-
     case "Collections": {
       const fields = [
         "name",
@@ -531,10 +531,6 @@ async function buildAppwriteData(
 
       break;
     }
-
-    /* =====================================================
-       STORES
-    ===================================================== */
 
     case "Stores": {
       const storeType =
@@ -606,10 +602,6 @@ async function buildAppwriteData(
       break;
     }
 
-    /* =====================================================
-       RATES
-    ===================================================== */
-
     case "Rates": {
       const fields = [
         "collection",
@@ -661,10 +653,6 @@ async function buildAppwriteData(
 
       break;
     }
-
-    /* =====================================================
-       HERO SLIDERS
-    ===================================================== */
 
     case "HeroSliders": {
       const fields = [
@@ -736,10 +724,6 @@ async function buildAppwriteData(
 
       break;
     }
-
-    /* =====================================================
-       PRODUCTS
-    ===================================================== */
 
     case "Products": {
       const fields = [
@@ -872,10 +856,6 @@ async function buildAppwriteData(
       break;
     }
 
-    /* =====================================================
-       OUR STORY
-    ===================================================== */
-
     case "OurStory": {
       const fields = [
         "title",
@@ -918,10 +898,6 @@ async function buildAppwriteData(
       break;
     }
 
-    /* =====================================================
-       ENQUIRIES
-    ===================================================== */
-
     case "Enquiries": {
       const fields = [
         "name",
@@ -962,10 +938,6 @@ async function buildAppwriteData(
 
   return data;
 }
-
-/* =========================================================
-   PATCH
-========================================================= */
 
 export async function PATCH(
   request: Request,
@@ -1017,13 +989,12 @@ export async function PATCH(
     return unauthorizedResponse();
   }
 
+  const uploadedDriveFileIds: string[] =
+    [];
+
   try {
     const originalFormData =
       await request.formData();
-
-    /* =====================================================
-       GOOGLE DRIVE
-    ===================================================== */
 
     const driveFolderName =
       getDriveFolderName(
@@ -1071,6 +1042,10 @@ export async function PATCH(
         driveImageIds.push(
           uploaded.id
         );
+
+        uploadedDriveFileIds.push(
+          uploaded.id
+        );
       }
 
       const videoItem =
@@ -1079,8 +1054,7 @@ export async function PATCH(
         );
 
       if (
-        videoItem instanceof
-          File &&
+        videoItem instanceof File &&
         videoItem.size > 0
       ) {
         const uploaded =
@@ -1093,12 +1067,12 @@ export async function PATCH(
 
         driveVideoId =
           uploaded.id;
+
+        uploadedDriveFileIds.push(
+          uploaded.id
+        );
       }
     }
-
-    /* =====================================================
-       APPWRITE DATA
-    ===================================================== */
 
     const data =
       await buildAppwriteData(
@@ -1133,15 +1107,15 @@ export async function PATCH(
 
     return response;
   } catch (error) {
+    await deleteDriveFiles(
+      uploadedDriveFileIds
+    );
+
     return errorResponse(
       error
     );
   }
 }
-
-/* =========================================================
-   DELETE
-========================================================= */
 
 export async function DELETE(
   _request: Request,
