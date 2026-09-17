@@ -1,45 +1,36 @@
-import pb from "@/lib/pocketbase";
+import { APPWRITE_DATABASE_ID, tablesDB } from "@/lib/appwrite";
+
+async function getCount(tableId: string) {
+  const response = await tablesDB.listRows({
+    databaseId: APPWRITE_DATABASE_ID,
+    tableId,
+    queries: [],
+    total: true,
+  });
+
+  return response.total;
+}
 
 export async function getDashboardCounts() {
   const [
     products,
     categories,
-    brands,
     heroSlides,
     rates,
     stores,
   ] = await Promise.all([
-    pb.collection("Products").getList(1, 1, {
-      requestKey: null,
-    }),
-
-    pb.collection("Categories").getList(1, 1, {
-      requestKey: null,
-    }),
-
-    pb.collection("Brands").getList(1, 1, {
-      requestKey: null,
-    }),
-
-    pb.collection("HeroSliders").getList(1, 1, {
-      requestKey: null,
-    }),
-
-    pb.collection("Rates").getList(1, 1, {
-      requestKey: null,
-    }),
-
-    pb.collection("Stores").getList(1, 1, {
-      requestKey: null,
-    }),
+    getCount("products"),
+    getCount("categories"),
+    getCount("herosliders"),
+    getCount("rates"),
+    getCount("stores"),
   ]);
 
   return {
-    products: products.totalItems,
-    categories: categories.totalItems,
-    brands: brands.totalItems,
-    heroSlides: heroSlides.totalItems,
-    rates: rates.totalItems,
-    stores: stores.totalItems,
+    products,
+    categories,
+    heroSlides,
+    rates,
+    stores,
   };
 }

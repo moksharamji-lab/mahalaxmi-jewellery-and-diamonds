@@ -332,7 +332,7 @@ function GoldProductCard({
 
   return (
     <Link
-      href={`/products/${product.slug}`}
+      href={`/products/${product.slug || product.id}`}
       className="group block"
     >
 

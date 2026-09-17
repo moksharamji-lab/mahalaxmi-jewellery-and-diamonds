@@ -8,14 +8,26 @@ type Props = {
   initialData?: HeroSlide;
 };
 
-export default function HeroForm({
-  initialData,
-}: Props) {
+const PAGE_OPTIONS = [
+  "Home",
+  "Gold",
+  "Diamonds",
+  "Categories",
+] as const;
+
+const MEDIA_TYPE_OPTIONS = [
+  "image",
+  "video",
+] as const;
+
+export default function HeroForm({ initialData }: Props) {
   const [form, setForm] = useState({
     title: initialData?.title ?? "",
     subtitle: initialData?.subtitle ?? "",
     buttonText: initialData?.buttonText ?? "",
     buttonLink: initialData?.buttonLink ?? "",
+    page: initialData?.page ?? "Home",
+    mediaType: initialData?.mediaType ?? "image",
     order: initialData?.order?.toString() ?? "1",
     active: initialData?.active ?? true,
   });
@@ -35,11 +47,21 @@ export default function HeroForm({
       formData.append("subtitle", form.subtitle);
       formData.append("buttonText", form.buttonText);
       formData.append("buttonLink", form.buttonLink);
+
+      // Hero page and media type
+      formData.append("page", form.page);
+      formData.append("mediaType", form.mediaType);
+
       formData.append("order", form.order);
       formData.append("active", String(form.active));
 
+      /*
+       * IMPORTANT:
+       * The admin API expects uploaded images under "images".
+       * Do not change this back to "image".
+       */
       if (image) {
-        formData.append("image", image);
+        formData.append("images", image);
       }
 
       if (video) {
@@ -68,6 +90,8 @@ export default function HeroForm({
           subtitle: "",
           buttonText: "",
           buttonLink: "",
+          page: "Home",
+          mediaType: "image",
           order: "1",
           active: true,
         });
@@ -76,7 +100,7 @@ export default function HeroForm({
         setVideo(null);
       }
     } catch (error) {
-      console.error(error);
+      console.error("Hero slide save error:", error);
       alert("Something went wrong.");
     }
   }
@@ -89,7 +113,7 @@ export default function HeroForm({
       {/* Header */}
       <div className="border-b border-[#E3D7C5] pb-5">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#A47C3A]">
-          Homepage Banner
+          Hero Banner
         </p>
 
         <h2 className="mt-1 text-xl font-semibold text-[#302A23]">
@@ -97,7 +121,70 @@ export default function HeroForm({
         </h2>
 
         <p className="mt-1 text-sm text-[#6F665B]">
-          Create and manage the content displayed in your homepage hero banner.
+          Create and manage hero slides for Home, Gold, Diamonds, and
+          Categories pages.
+        </p>
+      </div>
+
+      {/* Page */}
+      <div>
+        <label
+          className="mb-2 block text-sm font-semibold text-[#40382F]"
+          htmlFor="hero-page"
+        >
+          Page
+        </label>
+
+        <select
+          id="hero-page"
+          value={form.page}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              page: e.target.value as (typeof PAGE_OPTIONS)[number],
+            })
+          }
+          className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-sm text-[#302A23] outline-none transition focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
+        >
+          {PAGE_OPTIONS.map((page) => (
+            <option key={page} value={page}>
+              {page}
+            </option>
+          ))}
+        </select>
+
+        <p className="mt-2 text-xs text-[#817668]">
+          Select where this hero slide should appear.
+        </p>
+      </div>
+
+      {/* Media Type */}
+      <div>
+        <label
+          className="mb-2 block text-sm font-semibold text-[#40382F]"
+          htmlFor="hero-media-type"
+        >
+          Media Type
+        </label>
+
+        <select
+          id="hero-media-type"
+          value={form.mediaType}
+          onChange={(e) =>
+            setForm({
+              ...form,
+              mediaType:
+                e.target.value as (typeof MEDIA_TYPE_OPTIONS)[number],
+            })
+          }
+          className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-sm text-[#302A23] outline-none transition focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
+        >
+          <option value="image">Image</option>
+          <option value="video">Video</option>
+        </select>
+
+        <p className="mt-2 text-xs text-[#817668]">
+          Choose whether this hero slide uses an image or video.
         </p>
       </div>
 
@@ -226,7 +313,7 @@ export default function HeroForm({
         />
 
         <p className="mt-2 text-xs text-[#817668]">
-          Lower numbers appear first on the homepage.
+          Lower numbers appear first.
         </p>
       </div>
 
@@ -315,7 +402,8 @@ export default function HeroForm({
           </div>
 
           <p className="mt-2 text-xs text-[#817668]">
-            Upload a new video below if you want to replace the current hero video.
+            Upload a new video below if you want to replace the current hero
+            video.
           </p>
         </div>
       )}
@@ -388,7 +476,7 @@ export default function HeroForm({
           </span>
 
           <span className="mt-1 block text-xs text-[#817668]">
-            Show this hero slide on the public homepage.
+            Show this hero slide on the selected public page.
           </span>
         </span>
       </label>
@@ -399,9 +487,7 @@ export default function HeroForm({
           type="submit"
           className="rounded-xl border border-[#B08D57] bg-[#B08D57] px-8 py-3 text-sm font-semibold text-[#FFF9EF] shadow-sm transition-all duration-200 hover:border-[#8F6F3F] hover:bg-[#8F6F3F] hover:shadow-md"
         >
-          {initialData
-            ? "Update Hero Slide"
-            : "Save Hero Slide"}
+          {initialData ? "Update Hero Slide" : "Save Hero Slide"}
         </button>
       </div>
     </form>

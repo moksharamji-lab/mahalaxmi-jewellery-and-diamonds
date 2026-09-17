@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
+
 import ProductForm from "@/components/admin/ProductForm";
 import { getProduct } from "@/services/product.service";
+import { getCategories } from "@/services/category.service";
 
 type Props = {
   params: Promise<{
@@ -21,6 +23,8 @@ export default async function EditProductPage({
     notFound();
   }
 
+  const categories = await getCategories();
+
   return (
     <div className="space-y-6">
       <div>
@@ -33,9 +37,10 @@ export default async function EditProductPage({
         </p>
       </div>
 
-      
-
-      <ProductForm initialData={product} />
+      <ProductForm
+        initialData={product}
+        categories={categories}
+      />
     </div>
   );
 }

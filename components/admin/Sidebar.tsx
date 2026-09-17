@@ -37,11 +37,6 @@ const menus = [
     icon: Folder,
   },
   {
-    name: "Brands",
-    href: "/admin/brands",
-    icon: Diamond,
-  },
-  {
     name: "Hero Slides",
     href: "/admin/hero-slides",
     icon: Image,

@@ -1,15 +1,18 @@
 export interface Product {
   id: string;
+
   name: string;
   slug: string;
+
   collection: string;
   category: string;
   brand: string;
+
   categoryName: string;
   brandName: string;
   collectionId: string;
 
-  // Common product details
+  // Product details
   purity: string;
   description: string;
 
@@ -21,16 +24,23 @@ export interface Product {
   igi: string;
   sgl: string;
 
-  // Existing fields
+  // Existing product fields
   weight: number;
   makingCharges: number;
+
   featured: boolean;
   active: boolean;
+
+  // PocketBase media
   images: string[];
   imageUrls: string[];
   imageUrl: string;
 
-  // Product video
+  // Google Drive media
+  driveImages: string[];
+  driveVideo: string;
+
+  // Final video URL
   video: string;
 
   created: string;

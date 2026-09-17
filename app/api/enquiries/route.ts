@@ -1,67 +1,169 @@
 import { NextResponse } from "next/server";
-import PocketBase from "pocketbase";
+import { ID } from "node-appwrite";
+import { z } from "zod";
 
-export async function POST(request: Request) {
+import {
+  APPWRITE_DATABASE_ID,
+  tablesDB,
+} from "@/lib/appwrite";
+
+/* =========================================================
+   VALIDATION
+========================================================= */
+
+const enquirySchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Name is required.")
+    .max(100, "Name is too long."),
+
+  phone: z
+    .string()
+    .trim()
+    .regex(
+      /^[+0-9()\-\s]{7,20}$/,
+      "Enter a valid phone number."
+    ),
+
+  email: z
+    .string()
+    .trim()
+    .max(150, "Email is too long.")
+    .optional()
+    .or(z.literal("")),
+
+  product: z
+    .string()
+    .trim()
+    .max(150, "Product name is too long.")
+    .optional()
+    .or(z.literal("")),
+
+  productSlug: z
+    .string()
+    .trim()
+    .max(200, "Product slug is too long.")
+    .optional()
+    .or(z.literal("")),
+
+  collection: z
+    .string()
+    .trim()
+    .max(50, "Collection is too long.")
+    .optional()
+    .or(z.literal("")),
+
+  message: z
+    .string()
+    .trim()
+    .max(
+      2000,
+      "Message is too long."
+    )
+    .optional()
+    .or(z.literal("")),
+});
+
+/* =========================================================
+   POST
+========================================================= */
+
+export async function POST(
+  request: Request
+) {
   try {
-    const body = await request.json();
+    const body =
+      await request
+        .json()
+        .catch(() => null);
 
-    const {
-      name,
-      phone,
-      email,
-      product,
-      productSlug,
-      collection,
-      message,
-    } = body;
+    const result =
+      enquirySchema.safeParse(
+        body
+      );
 
-    // Basic validation
-    if (!name || !phone) {
+    if (!result.success) {
       return NextResponse.json(
         {
-          error: "Name and phone number are required.",
+          error:
+            "Please enter valid enquiry details.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    // Create a server-side PocketBase client
-    const pb = new PocketBase(
-      process.env.NEXT_PUBLIC_POCKETBASE_URL ||
-        "http://127.0.0.1:8090"
-    );
+    const enquiry =
+      result.data;
 
-    // Create enquiry
-    await pb.collection("Enquiries").create({
-      name: String(name).trim(),
-      phone: String(phone).trim(),
-      email: email ? String(email).trim() : "",
-      product: product ? String(product).trim() : "",
-      productSlug: productSlug
-        ? String(productSlug).trim()
-        : "",
-      collection: collection
-        ? String(collection).trim()
-        : "",
-      message: message ? String(message).trim() : "",
-      status: "New",
+    /* =====================================================
+       CREATE ENQUIRY
+    ===================================================== */
+
+    await tablesDB.createRow({
+      databaseId:
+        APPWRITE_DATABASE_ID,
+
+      tableId:
+        "enquiries",
+
+      rowId:
+        ID.unique(),
+
+      data: {
+        name:
+          enquiry.name,
+
+        phone:
+          enquiry.phone,
+
+        email:
+          enquiry.email ?? "",
+
+        product:
+          enquiry.product ?? "",
+
+        productSlug:
+          enquiry.productSlug ?? "",
+
+        collection:
+          enquiry.collection ?? "",
+
+        message:
+          enquiry.message ?? "",
+
+        status:
+          "New",
+      },
     });
 
     return NextResponse.json(
       {
         success: true,
-        message: "Enquiry submitted successfully.",
+
+        message:
+          "Enquiry submitted successfully.",
       },
-      { status: 201 }
+      {
+        status: 201,
+      }
     );
   } catch (error) {
-    console.error("Enquiry submission error:", error);
+    console.error(
+      "Enquiry submission error:",
+      error
+    );
 
     return NextResponse.json(
       {
-        error: "Unable to submit enquiry. Please try again.",
+        error:
+          "Unable to submit enquiry. Please try again.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }

@@ -1,4 +1,7 @@
-import pb from "@/lib/pocketbase";
+import {
+  APPWRITE_DATABASE_ID,
+  tablesDB,
+} from "@/lib/appwrite";
 
 import type {
   HeroSlide,
@@ -7,10 +10,12 @@ import type {
 } from "@/types/hero-slide";
 
 /* =========================================================
-   MAP POCKETBASE RECORD
+   MAP APPWRITE RECORD
 ========================================================= */
 
-function mapHeroSlide(record: any): HeroSlide {
+function mapHeroSlide(
+  record: Record<string, unknown>
+): HeroSlide {
   const pageValue = String(
     record.page ?? "Home"
   );
@@ -34,8 +39,24 @@ function mapHeroSlide(record: any): HeroSlide {
       ? "video"
       : "image";
 
+  const driveImage = String(
+    record.driveImage ?? ""
+  ).trim();
+
+  const driveVideo = String(
+    record.driveVideo ?? ""
+  ).trim();
+
+  const imageUrl = driveImage
+    ? `/api/media/${encodeURIComponent(driveImage)}`
+    : "";
+
+  const videoUrl = driveVideo
+    ? `/api/media/${encodeURIComponent(driveVideo)}`
+    : "";
+
   return {
-    id: record.id,
+    id: String(record.$id ?? ""),
 
     title: String(
       record.title ?? ""
@@ -57,27 +78,12 @@ function mapHeroSlide(record: any): HeroSlide {
 
     mediaType,
 
-    image: String(
-      record.image ?? ""
-    ),
+    // Google Drive media IDs
+    image: driveImage,
+    imageUrl,
 
-    imageUrl: record.image
-      ? pb.files.getURL(
-          record,
-          record.image
-        )
-      : "",
-
-    video: String(
-      record.video ?? ""
-    ),
-
-    videoUrl: record.video
-      ? pb.files.getURL(
-          record,
-          record.video
-        )
-      : "",
+    video: driveVideo,
+    videoUrl,
 
     active: Boolean(
       record.active
@@ -87,10 +93,26 @@ function mapHeroSlide(record: any): HeroSlide {
       record.order ?? 0
     ),
 
-    created: record.created,
+    created: String(
+      record.$createdAt ?? ""
+    ),
 
-    updated: record.updated,
+    updated: String(
+      record.$updatedAt ?? ""
+    ),
   };
+}
+
+/* =========================================================
+   SORT HERO SLIDES
+========================================================= */
+
+function sortHeroSlides(
+  slides: HeroSlide[]
+): HeroSlide[] {
+  return [...slides].sort(
+    (a, b) => a.order - b.order
+  );
 }
 
 /* =========================================================
@@ -100,15 +122,90 @@ function mapHeroSlide(record: any): HeroSlide {
 export async function getHeroSlides(): Promise<
   HeroSlide[]
 > {
-  const records = await pb
-    .collection("HeroSliders")
-    .getFullList({
-      sort: "order",
-    });
+  try {
+    const result =
+      await tablesDB.listRows({
+        databaseId:
+          APPWRITE_DATABASE_ID,
 
-  return records.map(
-    mapHeroSlide
-  );
+        tableId: "herosliders",
+
+        /*
+         * Do not use Appwrite Query.orderAsc()
+         * here. Sorting is done below in JavaScript
+         * so the Hero does not depend on an
+         * Appwrite database index.
+         */
+      });
+
+    const slides =
+      result.rows.map((row) =>
+        mapHeroSlide(
+          row as unknown as Record<
+            string,
+            unknown
+          >
+        )
+      );
+
+    return sortHeroSlides(slides);
+  } catch (error) {
+    console.error(
+      "Failed to load hero slides:",
+      error
+    );
+
+    return [];
+  }
+}
+
+/* =========================================================
+   GET HERO SLIDES BY PAGE
+========================================================= */
+
+export async function getHeroSlidesByPage(
+  page: HeroSliderPage
+): Promise<HeroSlide[]> {
+  try {
+    /*
+     * Load all Hero slides first.
+     *
+     * We intentionally avoid Query.equal()
+     * because Appwrite queries can require
+     * database indexes.
+     */
+    const result =
+      await tablesDB.listRows({
+        databaseId:
+          APPWRITE_DATABASE_ID,
+
+        tableId: "herosliders",
+      });
+
+    const slides =
+      result.rows.map((row) =>
+        mapHeroSlide(
+          row as unknown as Record<
+            string,
+            unknown
+          >
+        )
+      );
+
+    return sortHeroSlides(
+      slides.filter(
+        (slide) =>
+          slide.page === page
+      )
+    );
+  } catch (error) {
+    console.error(
+      `Failed to load ${page} hero slides:`,
+      error
+    );
+
+    return [];
+  }
 }
 
 /* =========================================================
@@ -118,13 +215,31 @@ export async function getHeroSlides(): Promise<
 export async function getHeroSlide(
   id: string
 ): Promise<HeroSlide> {
-  const record = await pb
-    .collection("HeroSliders")
-    .getOne(id);
+  try {
+    const record =
+      await tablesDB.getRow({
+        databaseId:
+          APPWRITE_DATABASE_ID,
 
-  return mapHeroSlide(
-    record
-  );
+        tableId: "herosliders",
+
+        rowId: id,
+      });
+
+    return mapHeroSlide(
+      record as unknown as Record<
+        string,
+        unknown
+      >
+    );
+  } catch (error) {
+    console.error(
+      `Failed to load hero slide ${id}:`,
+      error
+    );
+
+    throw error;
+  }
 }
 
 /* =========================================================
@@ -134,7 +249,12 @@ export async function getHeroSlide(
 export async function deleteHeroSlide(
   id: string
 ) {
-  return await pb
-    .collection("HeroSliders")
-    .delete(id);
+  return await tablesDB.deleteRow({
+    databaseId:
+      APPWRITE_DATABASE_ID,
+
+    tableId: "herosliders",
+
+    rowId: id,
+  });
 }

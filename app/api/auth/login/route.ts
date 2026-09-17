@@ -1,76 +1,104 @@
-import PocketBase from "pocketbase";
 import { NextResponse } from "next/server";
+import { Account, Client } from "node-appwrite";
 import { z } from "zod";
 
 import {
   ADMIN_AUTH_COOKIE,
   ADMIN_AUTH_COOKIE_OPTIONS,
-  POCKETBASE_URL,
 } from "@/lib/auth-config";
-
-import { lockCmsWriteRules } from "@/lib/lock-cms-write-rules";
 
 const credentialsSchema = z.object({
   email: z.string().trim().email(),
   password: z.string().min(1),
 });
 
-export async function POST(request: Request) {
-  const body = await request.json().catch(() => null);
+function getRequiredEnv(name: string): string {
+  const value = process.env[name];
 
-  const credentials = credentialsSchema.safeParse(body);
-
-  if (!credentials.success) {
-    return NextResponse.json(
-      { message: "Enter a valid email and password." },
-      { status: 400 }
-    );
+  if (!value) {
+    throw new Error(`${name} is missing`);
   }
 
-  const pb = new PocketBase(POCKETBASE_URL);
+  return value;
+}
 
+const endpoint = getRequiredEnv(
+  "NEXT_PUBLIC_APPWRITE_ENDPOINT"
+);
+
+const projectId = getRequiredEnv(
+  "NEXT_PUBLIC_APPWRITE_PROJECT_ID"
+);
+
+const apiKey = getRequiredEnv(
+  "APPWRITE_API_KEY"
+);
+
+export async function POST(request: Request) {
   try {
-    const authData = await pb
-      .collection("_superusers")
-      .authWithPassword(
-        credentials.data.email,
-        credentials.data.password,
+    const body = await request.json().catch(() => null);
+
+    const credentials = credentialsSchema.safeParse(body);
+
+    if (!credentials.success) {
+      return NextResponse.json(
         {
-          requestKey: null,
-        }
+          message: "Enter a valid email and password.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const client = new Client()
+      .setEndpoint(endpoint)
+      .setProject(projectId)
+      .setKey(apiKey);
+
+    const account = new Account(client);
+
+    const session =
+      await account.createEmailPasswordSession(
+        credentials.data.email,
+        credentials.data.password
       );
 
-    try {
-      await lockCmsWriteRules(pb);
-    } catch (error) {
+    const sessionSecret = session.secret;
+
+    if (!sessionSecret) {
       console.error(
-        "Unable to lock PocketBase write rules:",
-        error
+        "Appwrite login succeeded but no session secret was returned."
       );
 
       return NextResponse.json(
         {
-          message:
-            "Unable to secure the CMS write rules. Please try again.",
+          message: "Unable to create admin session.",
         },
         { status: 500 }
       );
     }
 
-    const response = NextResponse.json({
-      email: authData.record.email ?? "",
-    });
+    const response = NextResponse.json(
+      {
+        success: true,
+        email: credentials.data.email,
+      },
+      { status: 200 }
+    );
 
     response.cookies.set(
       ADMIN_AUTH_COOKIE,
-      pb.authStore.token,
+      sessionSecret,
       ADMIN_AUTH_COOKIE_OPTIONS
     );
 
     return response;
-  } catch {
+  } catch (error) {
+    console.error("Appwrite login failed:", error);
+
     return NextResponse.json(
-      { message: "Invalid email or password." },
+      {
+        message: "Invalid email or password.",
+      },
       { status: 401 }
     );
   }

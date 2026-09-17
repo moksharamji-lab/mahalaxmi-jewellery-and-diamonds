@@ -2,7 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import ProductTable from "@/components/admin/ProductTable";
-import { getBrands } from "@/services/brand.service";
 import { getCategories } from "@/services/category.service";
 import {
   getProductsPage,
@@ -15,7 +14,6 @@ type SearchParams = {
   q?: string | string[];
   collection?: string | string[];
   category?: string | string[];
-  brand?: string | string[];
   active?: string | string[];
   page?: string | string[];
 };
@@ -56,12 +54,7 @@ function getProductsUrl(
     );
   }
 
-  if (filters.brand) {
-    searchParams.set(
-      "brand",
-      filters.brand
-    );
-  }
+
 
   if (typeof filters.active === "boolean") {
     searchParams.set(
@@ -122,10 +115,7 @@ export default async function ProductsPage({
       params.category
     );
 
-  const brandParam =
-    getFirstSearchValue(
-      params.brand
-    );
+  
 
   const activeParam =
     getFirstSearchValue(
@@ -144,10 +134,10 @@ export default async function ProductsPage({
       ? pageParam
       : 1;
 
-  const [categories, brands] =
+  const [categories] =
     await Promise.all([
       getCategories(),
-      getBrands(),
+     
     ]);
 
   const collection = [
@@ -163,12 +153,7 @@ export default async function ProductsPage({
     ? categoryParam
     : "";
 
-  const brand = brands.some(
-    ({ id }) => id === brandParam
-  )
-    ? brandParam
-    : "";
-
+ 
   const active =
     activeParam === "true"
       ? true
@@ -182,7 +167,6 @@ export default async function ProductsPage({
     ),
     collection,
     category,
-    brand,
     active,
   };
 
@@ -210,7 +194,6 @@ export default async function ProductsPage({
     filters.search ||
       collection ||
       category ||
-      brand ||
       typeof active === "boolean"
   );
 
@@ -352,39 +335,7 @@ export default async function ProductsPage({
               )}
             </select>
           </div>
-
-          {/* Brand */}
-
-          <div>
-            <label
-              className="sr-only"
-              htmlFor="brand-filter"
-            >
-              Filter by brand
-            </label>
-
-            <select
-              id="brand-filter"
-              name="brand"
-              defaultValue={brand}
-              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] px-4 py-3 text-sm text-[#40382F] outline-none transition focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
-            >
-              <option value="">
-                All Brands
-              </option>
-
-              {brands.map(
-                (item) => (
-                  <option
-                    key={item.id}
-                    value={item.id}
-                  >
-                    {item.name}
-                  </option>
-                )
-              )}
-            </select>
-          </div>
+        
         </div>
 
         {/* STATUS + BUTTONS */}

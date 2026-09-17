@@ -11,12 +11,16 @@ import type { Product } from "@/types/product";
 import { getHeroSlides } from "@/services/hero-slide.service";
 import type { HeroSlide } from "@/types/hero-slide";
 
+import { getOurStory } from "@/services/our-story.service";
+import type { OurStory } from "@/types/our-story";
+
 import HeroSlider from "@/components/public/HeroSlider";
 
 export default async function HomePage() {
   let stores: Store[] = [];
   let newestProducts: Product[] = [];
   let heroSlides: HeroSlide[] = [];
+  let ourStory: OurStory | null = null;
 
   /* =====================================================
      LOAD STORES
@@ -53,19 +57,27 @@ export default async function HomePage() {
   }
 
   /* =====================================================
+     LOAD OUR STORY
+  ===================================================== */
+
+  try {
+    ourStory = await getOurStory();
+  } catch (error) {
+    console.error("Failed to load Our Story:", error);
+  }
+
+  /* =====================================================
      ACTIVE HERO SLIDES
   ===================================================== */
 
   const activeHeroSlides = heroSlides
-  .filter(
-    (slide) =>
-      slide.active &&
-      slide.page === "Home" &&
-      (slide.videoUrl || slide.imageUrl)
-  )
-  .sort(
-    (a, b) => a.order - b.order
-  );
+    .filter(
+      (slide) =>
+        slide.active &&
+        slide.page === "Home" &&
+        (slide.videoUrl || slide.imageUrl)
+    )
+    .sort((a, b) => a.order - b.order);
 
   /* =====================================================
      FIND STORES
@@ -78,6 +90,27 @@ export default async function HomePage() {
   const diamondStore = stores.find(
     (store) => store.collection === "Diamond"
   );
+
+  /* =====================================================
+     OUR STORY CONTENT
+  ===================================================== */
+
+  const storyTitle =
+    ourStory?.title || "Tradition Meets Elegance";
+
+  const storyParagraphOne =
+    ourStory?.paragraphOne ||
+    "Mahalaxmi Jewels brings together timeless craftsmanship and contemporary design to create jewellery for life's most memorable moments.";
+
+  const storyParagraphTwo =
+    ourStory?.paragraphTwo ||
+    "From classic gold jewellery to elegant diamond creations, every piece is selected with an appreciation for beauty, detail and lasting elegance.";
+
+  const storyButtonText =
+    ourStory?.buttonText || "Explore Our Collections";
+
+  const storyButtonLink =
+    ourStory?.buttonLink || "/categories";
 
   return (
     <main className="min-h-screen bg-[#f8f5ef] text-[#1c1a17]">
@@ -93,7 +126,6 @@ export default async function HomePage() {
       ================================================= */}
 
       <section className="border-b border-[#e5ded2] bg-[#f8f5ef]">
-
         <div className="mx-auto max-w-[1400px] px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
 
           {/* Section heading */}
@@ -258,32 +290,26 @@ export default async function HomePage() {
             </p>
 
             <h2 className="mt-4 font-display text-4xl font-normal tracking-[-0.02em] text-[#1c1a17] sm:text-5xl">
-              Tradition Meets Elegance
+              {storyTitle}
             </h2>
 
             <div className="mx-auto mt-5 h-px w-12 bg-[#b08d57]" />
 
             <p className="mt-7 text-sm leading-8 text-[#777169] sm:text-base sm:leading-8">
-              Mahalaxmi Jewels brings together timeless
-              craftsmanship and contemporary design to
-              create jewellery for life&apos;s most memorable
-              moments.
+              {storyParagraphOne}
             </p>
 
             <p className="mt-5 text-sm leading-8 text-[#777169] sm:text-base sm:leading-8">
-              From classic gold jewellery to elegant
-              diamond creations, every piece is selected
-              with an appreciation for beauty, detail and
-              lasting elegance.
+              {storyParagraphTwo}
             </p>
 
             <div className="mt-8">
 
               <Link
-                href="/categories"
+                href={storyButtonLink}
                 className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#1c1a17] transition-colors hover:text-[#b08d57] sm:text-xs"
               >
-                Explore Our Collections
+                {storyButtonText}
 
                 <span>
                   →
@@ -387,6 +413,7 @@ export default async function HomePage() {
             </Link>
 
           </div>
+
         </div>
       </section>
 

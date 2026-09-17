@@ -1,7 +1,3 @@
-export const POCKETBASE_URL =
-  process.env.NEXT_PUBLIC_POCKETBASE_URL ??
-  "http://127.0.0.1:8090";
-
 export const ADMIN_AUTH_COOKIE = "mahalaxmi_admin_token";
 
 export const ADMIN_AUTH_COOKIE_OPTIONS = {

@@ -35,9 +35,11 @@ export default function PublicLayout({
 
       <footer className="border-t border-zinc-800 bg-black">
         <div className="mx-auto max-w-7xl px-6 py-14">
+
           {/* Footer Grid */}
 
           <div className="grid gap-10 md:grid-cols-3">
+
             {/* =================================================
                 BRAND
             ================================================= */}
@@ -52,7 +54,7 @@ export default function PublicLayout({
                 </span>
 
                 <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">
-                  Jewellery & Diamonds
+                  JEWELLERS AND DIAMONDS
                 </span>
               </Link>
 
@@ -73,6 +75,7 @@ export default function PublicLayout({
               </h3>
 
               <div className="mt-5 flex flex-col gap-3 text-sm">
+
                 <Link
                   href="/"
                   className="text-zinc-400 transition hover:text-yellow-500"
@@ -114,6 +117,7 @@ export default function PublicLayout({
                 >
                   Contact
                 </Link>
+
               </div>
             </div>
 
@@ -127,6 +131,7 @@ export default function PublicLayout({
               </h3>
 
               <div className="mt-5 space-y-5 text-sm">
+
                 <div>
                   <p className="font-semibold text-zinc-300">
                     Gold Store
@@ -152,6 +157,7 @@ export default function PublicLayout({
                     Explore Diamond Jewellery →
                   </Link>
                 </div>
+
               </div>
 
               <Link
@@ -161,31 +167,38 @@ export default function PublicLayout({
                 Get Store Details →
               </Link>
             </div>
+
           </div>
 
-          {/* =================================================
+          {/* =====================================================
               COPYRIGHT
-          ================================================= */}
+          ===================================================== */}
 
           <div className="mt-12 border-t border-zinc-800 pt-6">
+
             <div className="flex flex-col gap-3 text-center text-sm sm:flex-row sm:items-center sm:justify-between sm:text-left">
+
               <p className="text-zinc-600">
-                © {new Date().getFullYear()} Mahalaxmi Jewellery
-                & Diamonds. All rights reserved.
+                © {new Date().getFullYear()} MAHALAXMI JEWELLERS AND DIAMONDS. All rights reserved.
               </p>
-<p className="text-zinc-600">
-  Website Designed & Developed by{" "}
-  <a
-    href="https://adsparkcom.lovable.app/"
-    target="_blank"
-    rel="noopener noreferrer"
-    className="font-medium text-yellow-500 transition hover:text-yellow-400"
-  >
-    AdSpark Technologies
-  </a>
-</p>
+
+              <p className="text-zinc-600">
+                Website Designed & Developed by{" "}
+
+                <a
+                  href="https://adsparkcom.lovable.app/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-yellow-500 transition hover:text-yellow-400"
+                >
+                  AdSpark Technologies
+                </a>
+              </p>
+
             </div>
+
           </div>
+
         </div>
       </footer>
     </div>

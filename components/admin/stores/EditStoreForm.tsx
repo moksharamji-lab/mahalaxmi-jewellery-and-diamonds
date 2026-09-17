@@ -14,8 +14,8 @@ type StoreFormData = {
   address: string;
   phone: string;
   whatsapp: string;
+  whatsappUrl: string;
   googleMapsUrl: string;
-  email: string;
   description: string;
   active: boolean;
 };
@@ -32,14 +32,17 @@ export default function EditStoreForm({ store }: Props) {
     address: store.address,
     phone: store.phone,
     whatsapp: store.whatsapp,
+    whatsappUrl:
+      store.whatsappUrl || "https://wa.me/919111311179",
     googleMapsUrl: store.googleMapsUrl,
-    email: store.email,
     description: store.description,
     active: store.active,
   });
 
   const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState(store.logo || "");
+  const [logoPreview, setLogoPreview] = useState(
+    store.logo || ""
+  );
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
@@ -96,14 +99,41 @@ export default function EditStoreForm({ store }: Props) {
       payload.append("name", formData.name);
       payload.append("address", formData.address);
       payload.append("phone", formData.phone);
-      payload.append("whatsapp", formData.whatsapp);
-      payload.append("googleMapsUrl", formData.googleMapsUrl);
-      payload.append("email", formData.email);
-      payload.append("description", formData.description);
-      payload.append("active", String(formData.active));
+
+      const whatsappNumber = formData.whatsapp
+        .replace(/\D/g, "")
+        .trim();
+
+      payload.append(
+        "whatsapp",
+        whatsappNumber
+      );
+
+      payload.append(
+        "whatsappUrl",
+        formData.whatsappUrl.trim()
+      );
+
+      payload.append(
+        "googleMapsUrl",
+        formData.googleMapsUrl.trim()
+      );
+
+      payload.append(
+        "description",
+        formData.description
+      );
+
+      payload.append(
+        "active",
+        String(formData.active)
+      );
 
       if (logoFile) {
-        payload.append("logo", logoFile);
+        payload.append(
+          "logo",
+          logoFile
+        );
       }
 
       const response = await fetch(
@@ -129,7 +159,9 @@ export default function EditStoreForm({ store }: Props) {
         return;
       }
 
-      setSuccess("Store updated successfully.");
+      setSuccess(
+        "Store updated successfully."
+      );
 
       router.refresh();
 
@@ -147,7 +179,10 @@ export default function EditStoreForm({ store }: Props) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-6"
+    >
       {/* Collection */}
       <section className="rounded-2xl border border-[#D8C9B5] bg-[#FAF6EE] p-6 shadow-[0_4px_18px_rgba(80,60,30,0.04)]">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A47C3A]">
@@ -182,7 +217,6 @@ export default function EditStoreForm({ store }: Props) {
         </p>
 
         <div className="mt-6 grid gap-6 md:grid-cols-[180px_1fr] md:items-start">
-          {/* Preview */}
           <div className="flex h-44 w-full items-center justify-center rounded-2xl border border-[#D8C9B5] bg-[#F3EDE2] p-4">
             {logoPreview ? (
               <img
@@ -195,6 +229,7 @@ export default function EditStoreForm({ store }: Props) {
                 <p className="text-sm font-semibold text-[#6F665B]">
                   No logo
                 </p>
+
                 <p className="mt-1 text-xs text-[#918576]">
                   Upload a store logo
                 </p>
@@ -202,7 +237,6 @@ export default function EditStoreForm({ store }: Props) {
             )}
           </div>
 
-          {/* Upload */}
           <div>
             <label
               htmlFor="logo"
@@ -243,7 +277,6 @@ export default function EditStoreForm({ store }: Props) {
         </p>
 
         <div className="mt-6 space-y-5">
-          {/* Store Name */}
           <div>
             <label
               htmlFor="name"
@@ -257,7 +290,10 @@ export default function EditStoreForm({ store }: Props) {
               type="text"
               value={formData.name}
               onChange={(event) =>
-                updateField("name", event.target.value)
+                updateField(
+                  "name",
+                  event.target.value
+                )
               }
               required
               className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] px-4 py-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
@@ -265,7 +301,6 @@ export default function EditStoreForm({ store }: Props) {
             />
           </div>
 
-          {/* Description */}
           <div>
             <label
               htmlFor="description"
@@ -289,7 +324,6 @@ export default function EditStoreForm({ store }: Props) {
             />
           </div>
 
-          {/* Address */}
           <div>
             <label
               htmlFor="address"
@@ -322,7 +356,7 @@ export default function EditStoreForm({ store }: Props) {
         </h2>
 
         <p className="mt-1 text-sm text-[#6F665B]">
-          Phone, WhatsApp and email details.
+          Phone and WhatsApp details.
         </p>
 
         <div className="mt-6 grid gap-5 md:grid-cols-2">
@@ -340,14 +374,17 @@ export default function EditStoreForm({ store }: Props) {
               type="tel"
               value={formData.phone}
               onChange={(event) =>
-                updateField("phone", event.target.value)
+                updateField(
+                  "phone",
+                  event.target.value
+                )
               }
               className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] px-4 py-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
               placeholder="Phone number"
             />
           </div>
 
-          {/* WhatsApp */}
+          {/* WhatsApp Number */}
           <div>
             <label
               htmlFor="whatsapp"
@@ -371,29 +408,36 @@ export default function EditStoreForm({ store }: Props) {
             />
 
             <p className="mt-2 text-xs text-[#817668]">
-              Include the country code without + or spaces.
+              Enter only the country code and number. No +, spaces or URL.
             </p>
           </div>
 
-          {/* Email */}
+          {/* WhatsApp URL */}
           <div className="md:col-span-2">
             <label
-              htmlFor="email"
+              htmlFor="whatsappUrl"
               className="mb-2 block text-sm font-semibold text-[#40382F]"
             >
-              Email
+              WhatsApp URL
             </label>
 
             <input
-              id="email"
-              type="email"
-              value={formData.email}
+              id="whatsappUrl"
+              type="url"
+              value={formData.whatsappUrl}
               onChange={(event) =>
-                updateField("email", event.target.value)
+                updateField(
+                  "whatsappUrl",
+                  event.target.value
+                )
               }
               className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] px-4 py-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
-              placeholder="Store email"
+              placeholder="https://wa.me/919111311179"
             />
+
+            <p className="mt-2 text-xs text-[#817668]">
+              This URL is used by the website WhatsApp buttons.
+            </p>
           </div>
         </div>
       </section>
@@ -488,7 +532,9 @@ export default function EditStoreForm({ store }: Props) {
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <button
           type="button"
-          onClick={() => router.push("/admin/stores")}
+          onClick={() =>
+            router.push("/admin/stores")
+          }
           disabled={isSaving}
           className="rounded-xl border border-[#D0C1AC] bg-[#EDE3D3] px-6 py-3 text-sm font-semibold text-[#554C42] transition-all duration-200 hover:border-[#B08D57] hover:bg-[#F3EDE2] hover:text-[#8F6F3F] disabled:cursor-not-allowed disabled:opacity-50"
         >
@@ -500,7 +546,9 @@ export default function EditStoreForm({ store }: Props) {
           disabled={isSaving}
           className="rounded-xl border border-[#B08D57] bg-[#B08D57] px-6 py-3 text-sm font-semibold text-[#FFF9EF] shadow-sm transition-all duration-200 hover:border-[#8F6F3F] hover:bg-[#8F6F3F] hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isSaving ? "Saving Changes..." : "Save Changes"}
+          {isSaving
+            ? "Saving Changes..."
+            : "Save Changes"}
         </button>
       </div>
     </form>

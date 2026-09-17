@@ -492,7 +492,7 @@ function DiamondProductCard({
 
   return (
     <Link
-      href={`/products/${product.slug}`}
+     href ={`/products/${product.slug || product.id}`}
       className="group block"
     >
 
@@ -537,11 +537,7 @@ function DiamondProductCard({
           {product.name}
         </h3>
 
-        {product.brandName && (
-          <p className="mt-2 text-[10px] uppercase tracking-[0.08em] text-[#918a81]">
-            {product.brandName}
-          </p>
-        )}
+      
 
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] uppercase tracking-[0.1em] text-[#918a81] sm:text-[10px]">
 

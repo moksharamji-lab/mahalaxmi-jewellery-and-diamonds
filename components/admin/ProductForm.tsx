@@ -1,16 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import type { Brand } from "@/types/brand";
 import type { Category } from "@/types/category";
 import type { Product } from "@/types/product";
 
-import pb from "@/lib/pocketbase";
 import { sendAdminMutation } from "@/lib/admin-api";
 
 type Props = {
   initialData?: Product;
+  categories: Category[];
 };
 
 type ProductFormState = {
@@ -24,11 +23,9 @@ type ProductFormState = {
   makingCharges: string;
   description: string;
 
-  // Gold
   hyd: string;
   hallmark: string;
 
-  // Diamond
   igi: string;
   sgl: string;
 
@@ -38,6 +35,7 @@ type ProductFormState = {
 
 export default function ProductForm({
   initialData,
+  categories,
 }: Props) {
   const [form, setForm] =
     useState<ProductFormState>({
@@ -57,16 +55,16 @@ export default function ProductForm({
         initialData?.makingCharges?.toString() ?? "",
       description:
         initialData?.description ?? "",
-        hyd:
-  initialData?.hyd ?? "",
-hallmark:
-  initialData?.hallmark ?? "",
-igi:
-  initialData?.igi ?? "",
-sgl:
-  initialData?.sgl ?? "",
+
+      hyd: initialData?.hyd ?? "",
+      hallmark: initialData?.hallmark ?? "",
+
+      igi: initialData?.igi ?? "",
+      sgl: initialData?.sgl ?? "",
+
       featured:
         initialData?.featured ?? false,
+
       active:
         initialData?.active ?? true,
     });
@@ -77,216 +75,38 @@ sgl:
   const [video, setVideo] =
     useState<File | null>(null);
 
-  const [categories, setCategories] =
-    useState<Category[]>([]);
-
-  const [brands, setBrands] =
-    useState<Brand[]>([]);
-
-  /* =====================================================
-     LOAD CATEGORIES
-  ===================================================== */
-
-  useEffect(() => {
-    async function loadCategories() {
-      try {
-        const records = await pb
-          .collection("Categories")
-          .getFullList({
-            sort: "name",
-            requestKey: null,
-          });
-
-        setCategories(
-          records.map((item) => ({
-            id: item.id,
-
-            name: String(
-              item.name ?? ""
-            ),
-
-            slug: String(
-              item.slug ?? ""
-            ),
-
-            collection:
-              String(
-                item.collection ?? ""
-              )
-                .replace("☑", "")
-                .trim()
-                .toLowerCase() ===
-              "diamond"
-                ? "Diamond"
-                : "Gold",
-
-            image: String(
-              item.image ?? ""
-            ),
-
-            description: String(
-              item.description ?? ""
-            ),
-
-            active: Boolean(
-              item.active
-            ),
-
-            created: String(
-              item.created ?? ""
-            ),
-
-            updated: String(
-              item.updated ?? ""
-            ),
-          }))
-        );
-      } catch (error) {
-        console.error(
-          "Failed to load categories:",
-          error
-        );
-      }
-    }
-
-    loadCategories();
-  }, []);
-
-  /* =====================================================
-     LOAD BRANDS
-  ===================================================== */
-
-  useEffect(() => {
-    async function loadBrands() {
-      try {
-        const records = await pb
-          .collection("Brands")
-          .getFullList({
-            sort: "name",
-            requestKey: null,
-          });
-
-        setBrands(
-          records.map((record) => ({
-            id: record.id,
-
-            name: String(
-              record.name ?? ""
-            ),
-
-            slug: String(
-              record.slug ?? ""
-            ),
-
-            logo: String(
-              record.logo ?? ""
-            ),
-
-            active: Boolean(
-              record.active
-            ),
-
-            created: String(
-              record.created ?? ""
-            ),
-
-            updated: String(
-              record.updated ?? ""
-            ),
-          }))
-        );
-      } catch (error) {
-        console.error(
-          "Failed to load brands:",
-          error
-        );
-      }
-    }
-
-    loadBrands();
-  }, []);
-
-  /* =====================================================
-     HANDLE PRODUCT SUBMIT
-  ===================================================== */
-
   async function handleSubmit(
     e: React.FormEvent<HTMLFormElement>
   ) {
     e.preventDefault();
 
     try {
-      const formData =
-        new FormData();
+      const formData = new FormData();
 
-      /* =================================================
-         BASIC INFORMATION
-      ================================================= */
-
-      formData.append(
-        "name",
-        form.name
-      );
-
-      formData.append(
-        "slug",
-        form.slug
-      );
-
-      formData.append(
-        "collection",
-        form.collection
-      );
-
-      formData.append(
-        "category",
-        form.category
-      );
-
-      formData.append(
-        "brand",
-        form.brand
-      );
-
-      formData.append(
-        "purity",
-        form.purity
-      );
-
-      formData.append(
-        "weight",
-        form.weight
-      );
-
+      formData.append("name", form.name);
+      formData.append("slug", form.slug);
+      formData.append("collection", form.collection);
+      formData.append("category", form.category);
+      formData.append("brand", form.brand);
+      formData.append("purity", form.purity);
+      formData.append("weight", form.weight);
       formData.append(
         "makingCharges",
         form.makingCharges
       );
-
       formData.append(
         "description",
         form.description
       );
-      
+
+      formData.append("hyd", form.hyd);
       formData.append(
-  "hyd",
-  form.hyd
-);
+        "hallmark",
+        form.hallmark
+      );
 
-formData.append(
-  "hallmark",
-  form.hallmark
-);
-
-formData.append(
-  "igi",
-  form.igi
-);
-
-formData.append(
-  "sgl",
-  form.sgl
-);
+      formData.append("igi", form.igi);
+      formData.append("sgl", form.sgl);
 
       formData.append(
         "featured",
@@ -298,31 +118,13 @@ formData.append(
         String(form.active)
       );
 
-      /* =================================================
-         PRODUCT IMAGES
-      ================================================= */
-
       images.forEach((image) => {
-        formData.append(
-          "images",
-          image
-        );
+        formData.append("images", image);
       });
 
-      /* =================================================
-         PRODUCT VIDEO
-      ================================================= */
-
       if (video) {
-        formData.append(
-          "video",
-          video
-        );
+        formData.append("video", video);
       }
-
-      /* =================================================
-         UPDATE EXISTING PRODUCT
-      ================================================= */
 
       if (initialData) {
         await sendAdminMutation(
@@ -334,13 +136,7 @@ formData.append(
         alert(
           "✅ Product Updated Successfully!"
         );
-      }
-
-      /* =================================================
-         CREATE NEW PRODUCT
-      ================================================= */
-
-      else {
+      } else {
         await sendAdminMutation(
           "products",
           "POST",
@@ -351,10 +147,6 @@ formData.append(
           "✅ Product Added Successfully!"
         );
       }
-
-      /* =================================================
-         RESET FORM
-      ================================================= */
 
       setForm({
         name: "",
@@ -367,9 +159,9 @@ formData.append(
         makingCharges: "",
         description: "",
         hyd: "",
-hallmark: "",
-igi: "",
-sgl: "",
+        hallmark: "",
+        igi: "",
+        sgl: "",
         featured: false,
         active: true,
       });
@@ -377,9 +169,7 @@ sgl: "",
       setImages([]);
       setVideo(null);
     } catch (error: unknown) {
-      if (
-        error instanceof Error
-      ) {
+      if (error instanceof Error) {
         alert(error.message);
       } else {
         alert(String(error));
@@ -392,9 +182,7 @@ sgl: "",
       onSubmit={handleSubmit}
       className="space-y-8 rounded-2xl border border-[#D8C9B5] bg-[#FAF6EE] p-6 shadow-[0_4px_18px_rgba(80,60,30,0.04)] md:p-8"
     >
-      {/* =====================================================
-          BASIC PRODUCT INFORMATION
-      ===================================================== */}
+      {/* BASIC INFORMATION */}
 
       <div>
         <div className="mb-6">
@@ -413,6 +201,7 @@ sgl: "",
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
+
           {/* Product Name */}
 
           <div>
@@ -429,7 +218,7 @@ sgl: "",
                   name: e.target.value,
                 })
               }
-              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
+              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
               placeholder="Enter product name"
               required
             />
@@ -451,7 +240,7 @@ sgl: "",
                   slug: e.target.value,
                 })
               }
-              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
+              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
               placeholder="product-slug"
             />
           </div>
@@ -468,12 +257,11 @@ sgl: "",
               onChange={(e) =>
                 setForm({
                   ...form,
-                  collection:
-                    e.target.value,
+                  collection: e.target.value,
                   category: "",
                 })
               }
-              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
+              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
             >
               <option value="Gold">
                 Gold
@@ -485,7 +273,7 @@ sgl: "",
             </select>
           </div>
 
-          {/* Category */}
+          {/* CATEGORY */}
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-[#40382F]">
@@ -497,11 +285,10 @@ sgl: "",
               onChange={(e) =>
                 setForm({
                   ...form,
-                  category:
-                    e.target.value,
+                  category: e.target.value,
                 })
               }
-              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
+              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
             >
               <option value="">
                 Select Category
@@ -510,9 +297,7 @@ sgl: "",
               {categories
                 .filter(
                   (category) =>
-                    category.active &&
-                    category.collection ===
-                      form.collection
+                    category.active
                 )
                 .map((category) => (
                   <option
@@ -520,44 +305,6 @@ sgl: "",
                     value={category.id}
                   >
                     {category.name}
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          {/* Brand */}
-
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-[#40382F]">
-              Brand
-            </label>
-
-            <select
-              value={form.brand}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  brand:
-                    e.target.value,
-                })
-              }
-              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
-            >
-              <option value="">
-                Select Brand
-              </option>
-
-              {brands
-                .filter(
-                  (brand) =>
-                    brand.active
-                )
-                .map((brand) => (
-                  <option
-                    key={brand.id}
-                    value={brand.id}
-                  >
-                    {brand.name}
                   </option>
                 ))}
             </select>
@@ -576,102 +323,101 @@ sgl: "",
               onChange={(e) =>
                 setForm({
                   ...form,
-                  purity:
-                    e.target.value,
+                  purity: e.target.value,
                 })
               }
               placeholder="e.g. 22K"
-              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
+              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
             />
           </div>
 
-{/* Gold Details */}
+          {/* Gold */}
 
-{form.collection === "Gold" && (
-  <>
-    <div>
-      <label className="mb-2 block text-sm font-semibold text-[#40382F]">
-        HYD
-      </label>
+          {form.collection === "Gold" && (
+            <>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-[#40382F]">
+                  HYD
+                </label>
 
-      <input
-        type="text"
-        value={form.hyd}
-        onChange={(e) =>
-          setForm({
-            ...form,
-            hyd: e.target.value,
-          })
-        }
-        placeholder="Enter HYD"
-        className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
-      />
-    </div>
+                <input
+                  type="text"
+                  value={form.hyd}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      hyd: e.target.value,
+                    })
+                  }
+                  placeholder="Enter HYD"
+                  className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
+                />
+              </div>
 
-    <div>
-      <label className="mb-2 block text-sm font-semibold text-[#40382F]">
-        Hallmark
-      </label>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-[#40382F]">
+                  Hallmark
+                </label>
 
-      <input
-        type="text"
-        value={form.hallmark}
-        onChange={(e) =>
-          setForm({
-            ...form,
-            hallmark: e.target.value,
-          })
-        }
-        placeholder="Enter Hallmark"
-        className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
-      />
-    </div>
-  </>
-)}
+                <input
+                  type="text"
+                  value={form.hallmark}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      hallmark: e.target.value,
+                    })
+                  }
+                  placeholder="Enter Hallmark"
+                  className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
+                />
+              </div>
+            </>
+          )}
 
-{/* Diamond Details */}
+          {/* Diamond */}
 
-{form.collection === "Diamond" && (
-  <>
-    <div>
-      <label className="mb-2 block text-sm font-semibold text-[#40382F]">
-        IGI
-      </label>
+          {form.collection === "Diamond" && (
+            <>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-[#40382F]">
+                  IGI
+                </label>
 
-      <input
-        type="text"
-        value={form.igi}
-        onChange={(e) =>
-          setForm({
-            ...form,
-            igi: e.target.value,
-          })
-        }
-        placeholder="Enter IGI"
-        className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
-      />
-    </div>
+                <input
+                  type="text"
+                  value={form.igi}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      igi: e.target.value,
+                    })
+                  }
+                  placeholder="Enter IGI"
+                  className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
+                />
+              </div>
 
-    <div>
-      <label className="mb-2 block text-sm font-semibold text-[#40382F]">
-        SGL
-      </label>
+              <div>
+                <label className="mb-2 block text-sm font-semibold text-[#40382F]">
+                  SGL
+                </label>
 
-      <input
-        type="text"
-        value={form.sgl}
-        onChange={(e) =>
-          setForm({
-            ...form,
-            sgl: e.target.value,
-          })
-        }
-        placeholder="Enter SGL"
-        className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
-      />
-    </div>
-  </>
-)}
+                <input
+                  type="text"
+                  value={form.sgl}
+                  onChange={(e) =>
+                    setForm({
+                      ...form,
+                      sgl: e.target.value,
+                    })
+                  }
+                  placeholder="Enter SGL"
+                  className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
+                />
+              </div>
+            </>
+          )}
 
           {/* Weight */}
 
@@ -687,12 +433,11 @@ sgl: "",
               onChange={(e) =>
                 setForm({
                   ...form,
-                  weight:
-                    e.target.value,
+                  weight: e.target.value,
                 })
               }
               placeholder="0.00"
-              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
+              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
             />
           </div>
 
@@ -715,17 +460,17 @@ sgl: "",
                 })
               }
               placeholder="0.00"
-              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
+              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
             />
           </div>
+
         </div>
       </div>
 
-      {/* =====================================================
-          DESCRIPTION
-      ===================================================== */}
+      {/* DESCRIPTION */}
 
       <div className="border-t border-[#E3D7C5] pt-8">
+
         <div className="mb-5">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A47C3A]">
             Product Details
@@ -746,16 +491,16 @@ sgl: "",
                 e.target.value,
             })
           }
-          className="w-full resize-none rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
+          className="w-full resize-none rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
           placeholder="Enter product description"
         />
+
       </div>
 
-      {/* =====================================================
-          PRODUCT IMAGES
-      ===================================================== */}
+      {/* PRODUCT IMAGES */}
 
       <div className="border-t border-[#E3D7C5] pt-8">
+
         <div className="mb-5">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A47C3A]">
             Media
@@ -770,52 +515,43 @@ sgl: "",
           </p>
         </div>
 
-        {/* Existing Images */}
-
         {initialData &&
-          initialData.images.length > 0 && (
+          initialData.imageUrls?.length > 0 && (
             <div className="mb-6">
+
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#817668]">
                 Existing Images
               </p>
 
               <div className="flex flex-wrap gap-4">
-                {initialData.images.map(
-                  (image, index) => {
-                    const imageUrl =
-                      initialData.imageUrls?.[
-                        index
-                      ] ||
-                      initialData.imageUrl ||
-                      "";
 
-                    return (
-                      <div
-                        key={`${image}-${index}`}
-                        className="overflow-hidden rounded-xl border border-[#D8C9B5] bg-[#F8F2E8]"
-                      >
-                        {imageUrl ? (
-                          <img
-                            src={imageUrl}
-                            alt={`Product ${
-                              index + 1
-                            }`}
-                            className="h-24 w-24 object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-24 w-24 items-center justify-center text-xs font-medium text-[#817668]">
-                            No Image
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }
+                {initialData.imageUrls.map(
+                  (imageUrl, index) => (
+                    <div
+                      key={`${imageUrl}-${index}`}
+                      className="overflow-hidden rounded-xl border border-[#D8C9B5] bg-[#F8F2E8]"
+                    >
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={`Product ${
+                            index + 1
+                          }`}
+                          className="h-24 w-24 object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-24 w-24 items-center justify-center text-xs font-medium text-[#817668]">
+                          No Image
+                        </div>
+                      )}
+                    </div>
+                  )
                 )}
+
               </div>
+
             </div>
           )}
-
-        {/* Upload */}
 
         <input
           type="file"
@@ -830,22 +566,22 @@ sgl: "",
               );
             }
           }}
-          className="block w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-sm text-[#554C42] file:mr-4 file:rounded-lg file:border-0 file:bg-[#B08D57] file:px-4 file:py-2 file:font-semibold file:text-[#FFF9EF] hover:file:bg-[#8F6F3F]"
+          className="block w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-sm text-[#554C42]"
         />
 
         <p className="mt-2 text-sm font-medium text-[#6F665B]">
           {images.length} image(s) selected
         </p>
 
-        {/* New Image Preview */}
-
         {images.length > 0 && (
           <div className="mt-5">
+
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#817668]">
               New Images
             </p>
 
             <div className="flex flex-wrap gap-4">
+
               {images.map(
                 (image, index) => (
                   <div
@@ -864,16 +600,18 @@ sgl: "",
                   </div>
                 )
               )}
+
             </div>
+
           </div>
         )}
+
       </div>
 
-      {/* =====================================================
-          PRODUCT VIDEO
-      ===================================================== */}
+      {/* PRODUCT VIDEO */}
 
       <div className="border-t border-[#E3D7C5] pt-8">
+
         <div className="mb-5">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A47C3A]">
             Media
@@ -889,27 +627,27 @@ sgl: "",
           </p>
         </div>
 
-        {/* Existing Video */}
-
         {initialData?.video &&
           !video && (
             <div className="mb-6">
+
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#817668]">
                 Existing Video
               </p>
 
               <div className="max-w-md overflow-hidden rounded-2xl border border-[#D8C9B5] bg-[#EDE3D3]">
+
                 <video
                   src={initialData.video}
                   controls
                   playsInline
                   className="aspect-video w-full object-contain"
                 />
+
               </div>
+
             </div>
           )}
-
-        {/* Video Upload */}
 
         <input
           type="file"
@@ -921,13 +659,12 @@ sgl: "",
 
             setVideo(selectedFile);
           }}
-          className="block w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-sm text-[#554C42] file:mr-4 file:rounded-lg file:border-0 file:bg-[#B08D57] file:px-4 file:py-2 file:font-semibold file:text-[#FFF9EF] hover:file:bg-[#8F6F3F]"
+          className="block w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-sm text-[#554C42]"
         />
-
-        {/* Selected Video Information */}
 
         {video && (
           <div className="mt-4 rounded-xl border border-[#D8C9B5] bg-[#F8F2E8] p-4">
+
             <p className="text-sm font-semibold text-[#302A23]">
               Selected Video
             </p>
@@ -943,18 +680,19 @@ sgl: "",
               ).toFixed(2)}{" "}
               MB
             </p>
+
           </div>
         )}
 
-        {/* New Video Preview */}
-
         {video && (
           <div className="mt-5">
+
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#817668]">
               Video Preview
             </p>
 
             <div className="max-w-md overflow-hidden rounded-2xl border border-[#D8C9B5] bg-[#EDE3D3]">
+
               <video
                 src={URL.createObjectURL(
                   video
@@ -963,20 +701,22 @@ sgl: "",
                 playsInline
                 className="aspect-video w-full object-contain"
               />
+
             </div>
+
           </div>
         )}
+
       </div>
 
-      {/* =====================================================
-          STATUS
-      ===================================================== */}
+      {/* STATUS */}
 
       <div className="border-t border-[#E3D7C5] pt-8">
-        <div className="grid gap-4 sm:grid-cols-2">
-          {/* Featured */}
 
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#D8C9B5] bg-[#F8F2E8] p-4 text-[#302A23] transition hover:border-[#B08D57]">
+        <div className="grid gap-4 sm:grid-cols-2">
+
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#D8C9B5] bg-[#F8F2E8] p-4 text-[#302A23]">
+
             <input
               type="checkbox"
               checked={form.featured}
@@ -999,11 +739,11 @@ sgl: "",
                 Show this product as featured.
               </p>
             </div>
+
           </label>
 
-          {/* Active */}
+          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#D8C9B5] bg-[#F8F2E8] p-4 text-[#302A23]">
 
-          <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#D8C9B5] bg-[#F8F2E8] p-4 text-[#302A23] transition hover:border-[#B08D57]">
             <input
               type="checkbox"
               checked={form.active}
@@ -1026,24 +766,28 @@ sgl: "",
                 Make this product visible.
               </p>
             </div>
+
           </label>
+
         </div>
+
       </div>
 
-      {/* =====================================================
-          SUBMIT
-      ===================================================== */}
+      {/* SUBMIT */}
 
       <div className="border-t border-[#E3D7C5] pt-8">
+
         <button
           type="submit"
-          className="w-full rounded-xl border border-[#B08D57] bg-[#B08D57] px-8 py-3.5 font-semibold text-[#FFF9EF] shadow-sm transition-all duration-200 hover:border-[#8F6F3F] hover:bg-[#8F6F3F] hover:shadow-md sm:w-auto"
+          className="w-full rounded-xl border border-[#B08D57] bg-[#B08D57] px-8 py-3.5 font-semibold text-[#FFF9EF] text-[#FFF9EF] sm:w-auto"
         >
           {initialData
             ? "Update Product"
             : "Save Product"}
         </button>
+
       </div>
+
     </form>
   );
 }

@@ -1,53 +1,51 @@
-import pb from "@/lib/pocketbase";
-import type { RecordModel } from "pocketbase";
+import {
+  APPWRITE_DATABASE_ID,
+  tablesDB,
+} from "@/lib/appwrite";
 
 import type { Category } from "@/types/category";
 
 export type { Category } from "@/types/category";
 
-function normalizeCollection(
-  value: unknown
-): "Gold" | "Diamond" {
-  const text = String(value ?? "")
-    .replace("☑", "")
-    .trim()
-    .toLowerCase();
-
-  if (text === "diamond") {
-    return "Diamond";
-  }
-
-  return "Gold";
-}
-
-function mapCategory(record: RecordModel): Category {
+function mapCategory(
+  record: Record<string, unknown>
+): Category {
   return {
-    id: record.id,
+    id: String(record.$id ?? ""),
     name: String(record.name ?? ""),
     slug: String(record.slug ?? ""),
-    collection: normalizeCollection(
-      record.collection
-    ),
-    image: String(record.image ?? ""),
-    description: String(
-      record.description ?? ""
-    ),
+
+    // Temporary compatibility value.
+    // The Appwrite Categories table currently does not
+    // have a collection field.
+    collection: "Gold",
+
+    description: "",
+
+    // Google Drive file ID stored in Appwrite.
+    image: String(record.driveImage ?? ""),
+
     active: Boolean(record.active),
-    created: String(record.created ?? ""),
-    updated: String(record.updated ?? ""),
+
+    created: String(record.$createdAt ?? ""),
+    updated: String(record.$updatedAt ?? ""),
   };
 }
 
 export async function getCategories(): Promise<Category[]> {
   try {
-    const records = await pb
-      .collection("Categories")
-      .getFullList({
-        sort: "name",
-        requestKey: null,
-      });
+    const result = await tablesDB.listRows({
+      databaseId: APPWRITE_DATABASE_ID,
+      tableId: "categories",
+    });
 
-    return records.map(mapCategory);
+    return result.rows
+      .map((row) =>
+        mapCategory(
+          row as unknown as Record<string, unknown>
+        )
+      )
+      .sort((a, b) => a.name.localeCompare(b.name));
   } catch (error) {
     console.error(
       "Failed to load categories:",
@@ -60,15 +58,19 @@ export async function getCategories(): Promise<Category[]> {
 
 export async function getActiveCategories(): Promise<Category[]> {
   try {
-    const records = await pb
-      .collection("Categories")
-      .getFullList({
-        filter: "active = true",
-        sort: "name",
-        requestKey: null,
-      });
+    const result = await tablesDB.listRows({
+      databaseId: APPWRITE_DATABASE_ID,
+      tableId: "categories",
+    });
 
-    return records.map(mapCategory);
+    return result.rows
+      .map((row) =>
+        mapCategory(
+          row as unknown as Record<string, unknown>
+        )
+      )
+      .filter((category) => category.active)
+      .sort((a, b) => a.name.localeCompare(b.name));
   } catch (error) {
     console.error(
       "Failed to load active categories:",
@@ -83,20 +85,22 @@ export async function getCategoriesByCollection(
   collection: "Gold" | "Diamond"
 ): Promise<Category[]> {
   try {
-    const records = await pb
-      .collection("Categories")
-      .getFullList({
-        filter: pb.filter(
-          "collection = {:collection}",
-          {
-            collection,
-          }
-        ),
-        sort: "name",
-        requestKey: null,
-      });
+    const result = await tablesDB.listRows({
+      databaseId: APPWRITE_DATABASE_ID,
+      tableId: "categories",
+    });
 
-    return records.map(mapCategory);
+    console.warn(
+      `getCategoriesByCollection("${collection}") cannot currently filter by collection because the Appwrite Categories table does not have a collection column.`
+    );
+
+    return result.rows
+      .map((row) =>
+        mapCategory(
+          row as unknown as Record<string, unknown>
+        )
+      )
+      .filter((category) => category.active);
   } catch (error) {
     console.error(
       `Failed to load ${collection} categories:`,
@@ -111,17 +115,21 @@ export async function getCategoryById(
   id: string
 ): Promise<Category | null> {
   try {
-    if (!id.trim()) {
+    const cleanId = id.trim();
+
+    if (!cleanId) {
       return null;
     }
 
-    const record = await pb
-      .collection("Categories")
-      .getOne(id, {
-        requestKey: null,
-      });
+    const result = await tablesDB.getRow({
+      databaseId: APPWRITE_DATABASE_ID,
+      tableId: "categories",
+      rowId: cleanId,
+    });
 
-    return mapCategory(record);
+    return mapCategory(
+      result as unknown as Record<string, unknown>
+    );
   } catch (error) {
     console.error(
       "Failed to load category by ID:",
@@ -142,18 +150,25 @@ export async function getCategoryBySlug(
       return null;
     }
 
-    const record = await pb
-      .collection("Categories")
-      .getFirstListItem(
-        pb.filter("slug = {:slug}", {
-          slug: cleanSlug,
-        }),
-        {
-          requestKey: null,
-        }
-      );
+    const result = await tablesDB.listRows({
+      databaseId: APPWRITE_DATABASE_ID,
+      tableId: "categories",
+      queries: [
+        `equal("slug", ["${cleanSlug.replace(
+          /"/g,
+          '\\"'
+        )}"])`,
+        "limit(1)",
+      ],
+    });
 
-    return mapCategory(record);
+    if (result.rows.length === 0) {
+      return null;
+    }
+
+    return mapCategory(
+      result.rows[0] as unknown as Record<string, unknown>
+    );
   } catch (error) {
     console.error(
       "Failed to load category by slug:",

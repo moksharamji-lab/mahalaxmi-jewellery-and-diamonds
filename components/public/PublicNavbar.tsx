@@ -49,6 +49,11 @@ const navItems = [
 export default function PublicNavbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  const handleNavigation = (href: string) => {
+    setMobileOpen(false);
+    window.location.href = href;
+  };
+
   return (
     <header className="sticky top-0 z-50 border-b border-[#4a4135] bg-[#211e1a]">
       <div className="mx-auto flex h-21.5 max-w-375 items-center justify-between px-5 sm:px-8 lg:px-12">
@@ -73,9 +78,13 @@ export default function PublicNavbar() {
             const Icon = item.icon;
 
             return (
-              <Link
+              <a
                 key={item.href}
                 href={item.href}
+                onClick={(event) => {
+                  event.preventDefault();
+                  handleNavigation(item.href);
+                }}
                 className="group flex items-center gap-2.5 text-[13px] font-semibold uppercase tracking-[0.13em] text-[#f1ece3] transition-colors duration-300 hover:text-[#d6b878]"
               >
                 <Icon
@@ -85,7 +94,7 @@ export default function PublicNavbar() {
                 />
 
                 <span>{item.label}</span>
-              </Link>
+              </a>
             );
           })}
         </nav>
@@ -113,10 +122,13 @@ export default function PublicNavbar() {
               const Icon = item.icon;
 
               return (
-                <Link
+                <a
                   key={item.href}
                   href={item.href}
-                  onClick={() => setMobileOpen(false)}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    handleNavigation(item.href);
+                  }}
                   className="flex items-center gap-4 border-b border-[#40382f] py-4 text-[13px] font-semibold uppercase tracking-[0.16em] text-[#f1ece3] transition-colors last:border-b-0 hover:text-[#d6b878]"
                 >
                   <Icon
@@ -126,7 +138,7 @@ export default function PublicNavbar() {
                   />
 
                   <span>{item.label}</span>
-                </Link>
+                </a>
               );
             })}
           </nav>

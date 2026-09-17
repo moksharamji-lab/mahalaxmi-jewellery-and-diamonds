@@ -1,13 +1,16 @@
 import ProductForm from "@/components/admin/ProductForm";
+import { getCategories } from "@/services/category.service";
 
-export default function NewProductPage() {
+export default async function NewProductPage() {
+  const categories = await getCategories();
+
   return (
     <div>
       <h1 className="mb-8 text-4xl font-bold text-white">
         Add Product
       </h1>
 
-      <ProductForm />
+      <ProductForm categories={categories} />
     </div>
   );
 }

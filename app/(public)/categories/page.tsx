@@ -1,11 +1,21 @@
 import Link from "next/link";
 
+import HeroSlider from "@/components/public/HeroSlider";
+
 import {
   getCategories,
   type Category,
 } from "@/services/category.service";
 
+import { getHeroSlides } from "@/services/hero-slide.service";
+
+import type { HeroSlide } from "@/types/hero-slide";
+
 export default async function CategoriesPage() {
+  /* =========================================================
+     LOAD CATEGORIES
+  ========================================================= */
+
   let categories: Category[] = [];
 
   try {
@@ -17,21 +27,59 @@ export default async function CategoriesPage() {
     );
   }
 
-  // Show only active categories
-  const activeCategories = categories.filter(
-    (category) => category.active
-  );
+  /* =========================================================
+     LOAD CATEGORY HERO SLIDES
+  ========================================================= */
 
-  // Separate Gold and Diamond categories
-  const goldCategories = activeCategories.filter(
-    (category) =>
-      category.collection === "Gold"
-  );
+  let heroSlides: HeroSlide[] = [];
 
-  const diamondCategories = activeCategories.filter(
-    (category) =>
-      category.collection === "Diamond"
-  );
+  try {
+    const slides = await getHeroSlides();
+
+    heroSlides = slides
+      .filter(
+        (slide) =>
+          slide.active &&
+          slide.page === "Categories" &&
+          (slide.imageUrl || slide.videoUrl)
+      )
+      .sort(
+        (a, b) => a.order - b.order
+      );
+  } catch (error) {
+    console.error(
+      "Failed to load Categories hero slides:",
+      error
+    );
+  }
+
+  /* =========================================================
+     ACTIVE CATEGORIES
+  ========================================================= */
+
+  const activeCategories =
+    categories.filter(
+      (category) =>
+        category.active
+    );
+
+  /* =========================================================
+     SEPARATE GOLD AND DIAMOND CATEGORIES
+  ========================================================= */
+
+  const goldCategories =
+    activeCategories.filter(
+      (category) =>
+        category.collection ===
+        "Gold"
+    );
+
+  const diamondCategories =
+    activeCategories.filter(
+      (category) =>
+        category.collection ===
+        "Diamond"
+    );
 
   return (
     <main className="min-h-screen bg-[#f8f5ef] text-[#1c1a17]">
@@ -40,70 +88,9 @@ export default async function CategoriesPage() {
           HERO
       ===================================================== */}
 
-      <section className="border-b border-[#e5ded2] bg-[#f1ece3]">
-
-        <div className="mx-auto max-w-350 px-5 sm:px-8 lg:px-10">
-
-          <div className="flex min-h-115 items-center justify-center py-20 sm:min-h-130">
-
-            <div className="max-w-3xl text-center">
-
-              {/* Label */}
-
-              <div className="flex items-center justify-center gap-3 sm:gap-4">
-
-                <span className="h-px w-8 bg-[#b08d57] sm:w-14" />
-
-                <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#b08d57] sm:text-xs sm:tracking-[0.4em]">
-                  Explore Our Collection
-                </p>
-
-                <span className="h-px w-8 bg-[#b08d57] sm:w-14" />
-
-              </div>
-
-              {/* Heading */}
-
-              <h1 className="mt-7 font-display text-5xl font-normal leading-[1.05] tracking-[-0.03em] text-[#1c1a17] sm:text-6xl md:text-7xl">
-
-                Jewellery
-
-                <span className="mt-2 block text-[#b08d57]">
-                  Categories
-                </span>
-
-              </h1>
-
-              {/* Description */}
-
-              <p className="mx-auto mt-7 max-w-2xl text-sm leading-7 text-[#777169] sm:text-base sm:leading-8">
-                Discover elegant gold and diamond
-                jewellery across our carefully selected
-                collections, created for every beautiful
-                occasion.
-              </p>
-
-              {/* Decorative */}
-
-              <div className="mx-auto mt-8 flex items-center justify-center gap-3">
-
-                <span className="h-px w-10 bg-[#e5ded2]" />
-
-                <span className="text-sm text-[#b08d57]">
-                  ✦
-                </span>
-
-                <span className="h-px w-10 bg-[#e5ded2]" />
-
-              </div>
-
-            </div>
-
-          </div>
-
-        </div>
-
-      </section>
+      <HeroSlider
+        slides={heroSlides}
+      />
 
       {/* =====================================================
           CATEGORY COLLECTION
@@ -180,7 +167,9 @@ export default async function CategoriesPage() {
                 <CategoryGroup
                   title="Gold Jewellery"
                   label="Gold Collection"
-                  categories={goldCategories}
+                  categories={
+                    goldCategories
+                  }
                 />
               )}
 
@@ -192,7 +181,9 @@ export default async function CategoriesPage() {
                 <CategoryGroup
                   title="Diamond Jewellery"
                   label="Diamond Collection"
-                  categories={diamondCategories}
+                  categories={
+                    diamondCategories
+                  }
                 />
               )}
 
@@ -206,12 +197,13 @@ export default async function CategoriesPage() {
                   <CategoryGroup
                     title="Our Jewellery"
                     label="Collection"
-                    categories={activeCategories}
+                    categories={
+                      activeCategories
+                    }
                   />
                 )}
 
             </>
-
           )}
 
         </div>
@@ -359,74 +351,80 @@ function CategoryGroup({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
 
-        {categories.map((category) => {
+        {categories.map(
+          (category) => {
 
-          const categorySlug = category.name
-            .toLowerCase()
-            .trim()
-            .replace(/\s+/g, "-");
+            const categorySlug =
+              category.name
+                .toLowerCase()
+                .trim()
+                .replace(
+                  /\s+/g,
+                  "-"
+                );
 
-          return (
-            <Link
-              key={category.id}
-              href={`/categories/${categorySlug}`}
-              className="group relative overflow-hidden border border-[#e5ded2] bg-[#f1ece3] p-7 transition-all duration-500 hover:-translate-y-1 hover:border-[#b08d57] sm:p-8"
-            >
+            return (
+              <Link
+                key={category.id}
+                href={`/categories/${categorySlug}`}
+                className="group relative overflow-hidden border border-[#e5ded2] bg-[#f1ece3] p-7 transition-all duration-500 hover:-translate-y-1 hover:border-[#b08d57] sm:p-8"
+              >
 
-              {/* Decorative circle */}
+                {/* Decorative circle */}
 
-              <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full border border-[#b08d57]/10 transition-all duration-500 group-hover:scale-150 group-hover:border-[#b08d57]/20" />
+                <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full border border-[#b08d57]/10 transition-all duration-500 group-hover:scale-150 group-hover:border-[#b08d57]/20" />
 
-              {/* Icon */}
+                {/* Icon */}
 
-              <div className="relative flex h-12 w-12 items-center justify-center border border-[#b08d57]/25 bg-[#b08d57]/5">
+                <div className="relative flex h-12 w-12 items-center justify-center border border-[#b08d57]/25 bg-[#b08d57]/5">
 
-                <span className="text-xl text-[#b08d57]">
-                  ◇
-                </span>
+                  <span className="text-xl text-[#b08d57]">
+                    ◇
+                  </span>
 
-              </div>
+                </div>
 
-              {/* Category name */}
+                {/* Category name */}
 
-              <h3 className="relative mt-6 font-display text-2xl font-normal text-[#1c1a17] transition-colors duration-300 group-hover:text-[#b08d57] sm:text-3xl">
-                {category.name}
-              </h3>
+                <h3 className="relative mt-6 font-display text-2xl font-normal text-[#1c1a17] transition-colors duration-300 group-hover:text-[#b08d57] sm:text-3xl">
+                  {category.name}
+                </h3>
 
-              {/* Description */}
+                {/* Description */}
 
-              {category.description ? (
+                {category.description ? (
 
-                <p className="relative mt-3 line-clamp-3 text-sm leading-7 text-[#777169]">
-                  {category.description}
-                </p>
+                  <p className="relative mt-3 line-clamp-3 text-sm leading-7 text-[#777169]">
+                    {category.description}
+                  </p>
 
-              ) : (
+                ) : (
 
-                <p className="relative mt-3 text-sm leading-7 text-[#777169]">
-                  Explore our beautiful{" "}
-                  {category.name} jewellery collection.
-                </p>
+                  <p className="relative mt-3 text-sm leading-7 text-[#777169]">
+                    Explore our beautiful{" "}
+                    {category.name} jewellery collection.
+                  </p>
 
-              )}
+                )}
 
-              {/* Explore */}
+                {/* Explore */}
 
-              <div className="relative mt-7 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1c1a17] transition-colors duration-300 group-hover:text-[#b08d57] sm:text-xs">
+                <div className="relative mt-7 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1c1a17] transition-colors duration-300 group-hover:text-[#b08d57] sm:text-xs">
 
-                <span>
-                  Explore Category
-                </span>
+                  <span>
+                    Explore Category
+                  </span>
 
-                <span className="transition-transform duration-300 group-hover:translate-x-1">
-                  →
-                </span>
+                  <span className="transition-transform duration-300 group-hover:translate-x-1">
+                    →
+                  </span>
 
-              </div>
+                </div>
 
-            </Link>
-          );
-        })}
+              </Link>
+            );
+          }
+        )}
 
       </div>
 

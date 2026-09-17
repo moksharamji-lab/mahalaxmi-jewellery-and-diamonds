@@ -1,34 +1,63 @@
 import "server-only";
 
-import PocketBase from "pocketbase";
 import { cookies } from "next/headers";
+import { Account, Client } from "node-appwrite";
 
 import {
   ADMIN_AUTH_COOKIE,
-  POCKETBASE_URL,
+  ADMIN_AUTH_COOKIE_OPTIONS,
 } from "@/lib/auth-config";
 
-import { refreshAdminToken } from "@/lib/pocketbase-auth";
+function getRequiredEnv(name: string): string {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`${name} is missing`);
+  }
+
+  return value;
+}
+
+const endpoint = getRequiredEnv(
+  "NEXT_PUBLIC_APPWRITE_ENDPOINT"
+);
+
+const projectId = getRequiredEnv(
+  "NEXT_PUBLIC_APPWRITE_PROJECT_ID"
+);
 
 export async function getAuthenticatedAdminClient() {
-  const token = (await cookies()).get(ADMIN_AUTH_COOKIE)?.value;
+  const cookieStore = await cookies();
+
+  const token = cookieStore.get(
+    ADMIN_AUTH_COOKIE
+  )?.value;
 
   if (!token) {
     return null;
   }
 
-  const refreshedToken = await refreshAdminToken(token);
+  try {
+    const authClient = new Client()
+      .setEndpoint(endpoint)
+      .setProject(projectId)
+      .setSession(token);
 
-  if (!refreshedToken) {
+    const account = new Account(authClient);
+
+    const user = await account.get();
+
+    return {
+      account,
+      user,
+      refreshedToken: token,
+    };
+  } catch {
     return null;
   }
-
-  const pb = new PocketBase(POCKETBASE_URL);
-
-  pb.authStore.save(refreshedToken);
-
-  return {
-    pb,
-    refreshedToken,
-  };
 }
+
+export {
+  ADMIN_AUTH_COOKIE,
+  ADMIN_AUTH_COOKIE_OPTIONS,
+};

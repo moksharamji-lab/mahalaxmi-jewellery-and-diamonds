@@ -1,13 +1,18 @@
 const adminResources = {
   products: "Products",
   categories: "Categories",
-  brands: "Brands",
+  collections: "Collections",
+  stores: "Stores",
+  rates: "Rates",
   "hero-slides": "HeroSliders",
+  "our-story": "OurStory",
+  enquiries: "Enquiries",
 } as const;
 
 export function getAdminResource(resource: string) {
   return (
-    adminResources[resource as keyof typeof adminResources] ??
-    null
+    adminResources[
+      resource as keyof typeof adminResources
+    ] ?? null
   );
 }

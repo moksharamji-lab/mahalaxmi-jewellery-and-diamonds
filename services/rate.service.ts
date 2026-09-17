@@ -1,5 +1,7 @@
-import pb from "@/lib/pocketbase";
-import type { RecordModel } from "pocketbase";
+import {
+  APPWRITE_DATABASE_ID,
+  tablesDB,
+} from "@/lib/appwrite";
 
 export type Rate = {
   id: string;
@@ -52,16 +54,21 @@ function normalizeUnit(
     .trim()
     .toLowerCase();
 
-  if (text === "per carat" || text === "carat") {
+  if (
+    text === "per carat" ||
+    text === "carat"
+  ) {
     return "Per Carat";
   }
 
   return "Per Gram";
 }
 
-function mapRate(record: RecordModel): Rate {
+function mapRate(
+  record: Record<string, unknown>
+): Rate {
   return {
-    id: record.id,
+    id: String(record.$id ?? ""),
 
     collection: normalizeCollection(
       record.collection
@@ -71,33 +78,95 @@ function mapRate(record: RecordModel): Rate {
       record.purity
     ),
 
-    rate: Number(record.rate ?? 0),
+    rate: Number(
+      record.rate ?? 0
+    ),
 
-    unit: normalizeUnit(record.unit),
+    unit: normalizeUnit(
+      record.unit
+    ),
 
-    active: Boolean(record.active),
+    active: Boolean(
+      record.active
+    ),
 
     updated: String(
-      record.updated ?? ""
+      record.$updatedAt ?? ""
     ),
   };
+}
+
+function sortRates(
+  rates: Rate[]
+): Rate[] {
+  const collectionOrder: Record<
+    "Gold" | "Diamond",
+    number
+  > = {
+    Gold: 1,
+    Diamond: 2,
+  };
+
+  const purityOrder: Record<
+    "24K" | "22K" | "18K" | "14K",
+    number
+  > = {
+    "24K": 1,
+    "22K": 2,
+    "18K": 3,
+    "14K": 4,
+  };
+
+  return [...rates].sort(
+    (a, b) => {
+      const collectionDifference =
+        collectionOrder[a.collection] -
+        collectionOrder[b.collection];
+
+      if (
+        collectionDifference !== 0
+      ) {
+        return collectionDifference;
+      }
+
+      return (
+        purityOrder[a.purity] -
+        purityOrder[b.purity]
+      );
+    }
+  );
 }
 
 /**
  * Get all rates.
  */
-export async function getRates(): Promise<Rate[]> {
+export async function getRates(): Promise<
+  Rate[]
+> {
   try {
-    const records = await pb
-      .collection("Rates")
-      .getFullList({
-        sort: "collection,purity",
-        requestKey: null,
+    const result =
+      await tablesDB.listRows({
+        databaseId:
+          APPWRITE_DATABASE_ID,
+        tableId: "rates",
       });
 
-    return records.map(mapRate);
+    const rates =
+      result.rows.map((row) =>
+        mapRate(
+          row as unknown as Record<
+            string,
+            unknown
+          >
+        )
+      );
+
+    return sortRates(rates);
   } catch (error) {
-    console.error("Failed to load rates:", error);
+    console.error(
+      "Failed to load rates:",
+      error
+    );
 
     return [];
   }
@@ -106,17 +175,32 @@ export async function getRates(): Promise<Rate[]> {
 /**
  * Get active rates.
  */
-export async function getActiveRates(): Promise<Rate[]> {
+export async function getActiveRates(): Promise<
+  Rate[]
+> {
   try {
-    const records = await pb
-      .collection("Rates")
-      .getFullList({
-        filter: "active = true",
-        sort: "collection,purity",
-        requestKey: null,
+    const result =
+      await tablesDB.listRows({
+        databaseId:
+          APPWRITE_DATABASE_ID,
+        tableId: "rates",
       });
 
-    return records.map(mapRate);
+    const rates =
+      result.rows
+        .map((row) =>
+          mapRate(
+            row as unknown as Record<
+              string,
+              unknown
+            >
+          )
+        )
+        .filter(
+          (rate) => rate.active
+        );
+
+    return sortRates(rates);
   } catch (error) {
     console.error(
       "Failed to load active rates:",
@@ -134,20 +218,30 @@ export async function getRatesByCollection(
   collection: "Gold" | "Diamond"
 ): Promise<Rate[]> {
   try {
-    const records = await pb
-      .collection("Rates")
-      .getFullList({
-        filter: pb.filter(
-          "collection = {:collection}",
-          {
-            collection,
-          }
-        ),
-        sort: "purity",
-        requestKey: null,
+    const result =
+      await tablesDB.listRows({
+        databaseId:
+          APPWRITE_DATABASE_ID,
+        tableId: "rates",
       });
 
-    return records.map(mapRate);
+    const rates =
+      result.rows
+        .map((row) =>
+          mapRate(
+            row as unknown as Record<
+              string,
+              unknown
+            >
+          )
+        )
+        .filter(
+          (rate) =>
+            rate.collection ===
+            collection
+        );
+
+    return sortRates(rates);
   } catch (error) {
     console.error(
       `Failed to load ${collection} rates:`,

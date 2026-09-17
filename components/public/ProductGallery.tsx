@@ -16,7 +16,13 @@ export default function ProductGallery({
 }: ProductGalleryProps) {
   const [selectedItem, setSelectedItem] = useState(0);
 
-  const totalItems = images.length + (video ? 1 : 0);
+  const totalItems =
+    images.length + (video ? 1 : 0);
+
+  const safeSelectedItem =
+    selectedItem < totalItems
+      ? selectedItem
+      : 0;
 
   if (!totalItems) {
     return (
@@ -27,7 +33,8 @@ export default function ProductGallery({
   }
 
   const isVideoSelected =
-    video && selectedItem === images.length;
+    Boolean(video) &&
+    safeSelectedItem === images.length;
 
   return (
     <div className="space-y-4">
@@ -44,9 +51,9 @@ export default function ProductGallery({
             preload="metadata"
             className="h-full w-full object-contain"
           />
-        ) : (
+        ) : images[safeSelectedItem] ? (
           <Image
-            src={images[selectedItem]}
+            src={images[safeSelectedItem]}
             alt={productName}
             fill
             priority
@@ -54,6 +61,10 @@ export default function ProductGallery({
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 50vw"
           />
+        ) : (
+          <div className="flex h-full items-center justify-center text-[#8a8174]">
+            No image available
+          </div>
         )}
       </div>
 
@@ -71,17 +82,23 @@ export default function ProductGallery({
             <button
               key={`${image}-${index}`}
               type="button"
-              onClick={() => setSelectedItem(index)}
-              aria-label={`View ${productName} image ${index + 1}`}
+              onClick={() =>
+                setSelectedItem(index)
+              }
+              aria-label={`View ${productName} image ${
+                index + 1
+              }`}
               className={`relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border-2 bg-[#eee8dc] transition ${
-                selectedItem === index
+                safeSelectedItem === index
                   ? "border-[#b08a3c]"
                   : "border-[#dfd5c4] hover:border-[#b08a3c]"
               }`}
             >
               <Image
                 src={image}
-                alt={`${productName} image ${index + 1}`}
+                alt={`${productName} image ${
+                  index + 1
+                }`}
                 fill
                 unoptimized
                 className="object-cover"
@@ -97,10 +114,12 @@ export default function ProductGallery({
           {video && (
             <button
               type="button"
-              onClick={() => setSelectedItem(images.length)}
+              onClick={() =>
+                setSelectedItem(images.length)
+              }
               aria-label={`Play ${productName} video`}
               className={`relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border-2 bg-[#1c1a17] transition ${
-                selectedItem === images.length
+                safeSelectedItem === images.length
                   ? "border-[#b08a3c]"
                   : "border-[#dfd5c4] hover:border-[#b08a3c]"
               }`}

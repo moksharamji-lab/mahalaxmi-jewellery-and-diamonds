@@ -1,24 +1,24 @@
 import Link from "next/link";
 import { getStores } from "@/services/store.service";
 
+const WHATSAPP_URL = "https://wa.me/919111311179";
+
 export default async function ContactPage() {
   const stores = (await getStores())
-  .filter((store) => store.active)
-  .sort((a, b) => {
-    if (a.collection === "Gold") return -1;
-    if (b.collection === "Gold") return 1;
-    return 0;
-  });
+    .filter((store) => store.active)
+    .sort((a, b) => {
+      if (a.collection === "Gold") return -1;
+      if (b.collection === "Gold") return 1;
+      return 0;
+    });
 
   return (
     <main className="min-h-screen bg-[#f8f5ef] text-[#1c1a17]">
-
       {/* =========================
           HEADER
       ========================= */}
 
       <section className="mx-auto max-w-7xl px-6 py-16 text-center md:py-20">
-
         <p className="text-sm uppercase tracking-[0.3em] text-[#b08a3c]">
           Visit Us
         </p>
@@ -32,7 +32,6 @@ export default async function ContactPage() {
           directly. Our team is here to help you discover the
           perfect piece of jewellery.
         </p>
-
       </section>
 
       {/* =========================
@@ -40,32 +39,18 @@ export default async function ContactPage() {
       ========================= */}
 
       <section className="mx-auto grid max-w-7xl gap-8 px-6 pb-20 md:grid-cols-2">
-
         {stores.map((store) => {
-
-          const whatsappMessage =
-            `Hello, I would like to know more about your ${store.collection} Jewellery Collection.`;
-
-          const whatsappUrl = store.whatsapp
-            ? `https://wa.me/${store.whatsapp}?text=${encodeURIComponent(
-                whatsappMessage
-              )}`
-            : "";
-
           return (
             <div
               key={store.id}
               className="rounded-3xl border border-[#dfd5c4] bg-white p-8 shadow-[0_15px_50px_rgba(80,60,30,0.06)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(80,60,30,0.1)]"
             >
-
               {/* =========================
                   STORE LOGO
               ========================= */}
 
               <div className="flex justify-center">
-
                 <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border border-[#c8a96b]/40 bg-[#eee8dc] p-5 shadow-[0_8px_25px_rgba(80,60,30,0.06)]">
-
                   {store.logo ? (
                     <img
                       src={store.logo}
@@ -74,14 +59,10 @@ export default async function ContactPage() {
                     />
                   ) : (
                     <span className="font-display text-4xl text-[#b08a3c]">
-                      {store.collection === "Gold"
-                        ? "G"
-                        : "D"}
+                      {store.collection === "Gold" ? "G" : "D"}
                     </span>
                   )}
-
                 </div>
-
               </div>
 
               {/* =========================
@@ -117,11 +98,9 @@ export default async function ContactPage() {
               ========================= */}
 
               <div className="space-y-6">
-
                 {/* Address */}
 
                 <div>
-
                   <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#9b917f]">
                     Address
                   </p>
@@ -129,13 +108,11 @@ export default async function ContactPage() {
                   <p className="mt-2 leading-6 text-[#39342e]">
                     {store.address}
                   </p>
-
                 </div>
 
                 {/* Phone */}
 
                 <div>
-
                   <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#9b917f]">
                     Phone
                   </p>
@@ -152,14 +129,12 @@ export default async function ContactPage() {
                       Phone number coming soon
                     </p>
                   )}
-
                 </div>
 
                 {/* Email */}
 
                 {store.email && (
                   <div>
-
                     <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#9b917f]">
                       Email
                     </p>
@@ -170,10 +145,8 @@ export default async function ContactPage() {
                     >
                       {store.email}
                     </a>
-
                   </div>
                 )}
-
               </div>
 
               {/* =========================
@@ -181,23 +154,16 @@ export default async function ContactPage() {
               ========================= */}
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-
                 {/* WhatsApp */}
 
-                {whatsappUrl ? (
-                  <a
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex-1 rounded-xl bg-[#b08a3c] px-5 py-4 text-center text-sm font-semibold text-white transition hover:bg-[#98742f]"
-                  >
-                    WhatsApp
-                  </a>
-                ) : (
-                  <span className="flex-1 rounded-xl bg-[#eee8dc] px-5 py-4 text-center text-sm font-semibold text-[#9b917f]">
-                    WhatsApp Unavailable
-                  </span>
-                )}
+                <a
+                  href={WHATSAPP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 rounded-xl bg-[#b08a3c] px-5 py-4 text-center text-sm font-semibold text-white transition hover:bg-[#98742f]"
+                >
+                  WhatsApp
+                </a>
 
                 {/* Location */}
 
@@ -215,13 +181,10 @@ export default async function ContactPage() {
                     Location Unavailable
                   </span>
                 )}
-
               </div>
-
             </div>
           );
         })}
-
       </section>
 
       {/* =========================
@@ -229,9 +192,7 @@ export default async function ContactPage() {
       ========================= */}
 
       <section className="border-t border-[#dfd5c4] bg-[#eee8dc]">
-
         <div className="mx-auto max-w-4xl px-6 py-16 text-center">
-
           <p className="text-sm uppercase tracking-[0.25em] text-[#b08a3c]">
             Need Assistance?
           </p>
@@ -251,11 +212,8 @@ export default async function ContactPage() {
           >
             Explore Our Collections
           </Link>
-
         </div>
-
       </section>
-
     </main>
   );
 }

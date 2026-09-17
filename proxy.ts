@@ -1,35 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  ADMIN_AUTH_COOKIE,
-  getSafeAdminPath,
-} from "@/lib/auth-config";
+
+import { ADMIN_AUTH_COOKIE } from "@/lib/auth-config";
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Only protect admin routes
-  if (!pathname.startsWith("/admin")) {
+  const isAdminRoute =
+    pathname === "/admin" || pathname.startsWith("/admin/");
+
+  if (!isAdminRoute) {
     return NextResponse.next();
   }
 
-  // Check admin authentication cookie
   const token = request.cookies.get(ADMIN_AUTH_COOKIE)?.value;
 
-  if (!token) {
-    const loginUrl = new URL(
-      "/mahalaxmi-control",
-      request.url
-    );
-
-    loginUrl.searchParams.set(
-      "next",
-      getSafeAdminPath(pathname)
-    );
-
-    return NextResponse.redirect(loginUrl);
+  if (token) {
+    return NextResponse.next();
   }
 
-  return NextResponse.next();
+  const loginUrl = request.nextUrl.clone();
+
+  loginUrl.pathname = "/mahalaxmi-control";
+  loginUrl.search = "";
+  loginUrl.searchParams.set("next", pathname);
+
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {

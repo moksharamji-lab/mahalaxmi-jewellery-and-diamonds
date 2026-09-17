@@ -1,10 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
 import type { HeroSlide } from "@/types/hero-slide";
 
@@ -18,14 +16,20 @@ export default function HeroSlider({
   const [currentIndex, setCurrentIndex] =
     useState(0);
 
-  const activeSlides = slides.filter(
-    (slide) =>
-      slide.active &&
-      (
-        slide.videoUrl ||
-        slide.imageUrl
-      )
-  );
+  /* =========================================================
+     ACTIVE SLIDES
+     ========================================================= */
+
+  const activeSlides = slides
+    .filter(
+      (slide) =>
+        slide.active &&
+        (slide.videoUrl || slide.imageUrl)
+    )
+    .sort(
+      (a, b) =>
+        a.order - b.order
+    );
 
   const slideCount =
     activeSlides.length;
@@ -36,9 +40,9 @@ export default function HeroSlider({
       ? currentIndex
       : 0;
 
-  /* =====================================================
+  /* =========================================================
      AUTOMATIC SLIDER
-  ===================================================== */
+     ========================================================= */
 
   useEffect(() => {
     if (slideCount <= 1) {
@@ -62,17 +66,21 @@ export default function HeroSlider({
     };
   }, [slideCount]);
 
-  /* =====================================================
+  /* =========================================================
      FALLBACK
-  ===================================================== */
+     ========================================================= */
 
   if (slideCount === 0) {
     return (
       <section className="relative min-h-[650px] overflow-hidden border-b border-[#e5ded2] bg-[#f8f5ef] sm:min-h-[700px] lg:min-h-[760px]">
 
+        {/* Decorative background */}
+
         <div className="pointer-events-none absolute left-[-180px] top-[-160px] h-[420px] w-[420px] rounded-full bg-[#d6b878]/10 blur-3xl" />
 
         <div className="pointer-events-none absolute bottom-[-180px] right-[-180px] h-[420px] w-[420px] rounded-full bg-[#b08d57]/10 blur-3xl" />
+
+        {/* Content */}
 
         <div className="relative z-10 mx-auto flex min-h-[650px] max-w-[1400px] items-center px-5 py-24 sm:min-h-[700px] sm:px-8 sm:py-28 lg:min-h-[760px] lg:px-10">
 
@@ -95,11 +103,13 @@ export default function HeroSlider({
             {/* TITLE */}
 
             <h1 className="mt-8 font-display text-5xl font-normal leading-[1.02] tracking-[-0.03em] text-[#1c1a17] sm:text-6xl md:text-7xl lg:text-[82px]">
+
               Timeless Elegance
 
               <span className="mt-2 block text-[#b08d57]">
                 Crafted For You
               </span>
+
             </h1>
 
             {/* DESCRIPTION */}
@@ -156,14 +166,22 @@ export default function HeroSlider({
   const slide =
     activeSlides[safeIndex];
 
+  /* =========================================================
+     HERO
+     ========================================================= */
+
   return (
     <section className="relative min-h-[650px] overflow-hidden border-b border-[#e5ded2] bg-[#1c1a17] sm:min-h-[700px] lg:min-h-[760px]">
 
-      {/* =================================================
+      {/* =====================================================
           MEDIA
-      ================================================= */}
+      ===================================================== */}
 
       <div className="absolute inset-0">
+
+        {/* ===================================================
+            VIDEO
+        =================================================== */}
 
         {slide.videoUrl ? (
           <video
@@ -181,16 +199,32 @@ export default function HeroSlider({
             className="h-full w-full object-cover"
           />
         ) : slide.imageUrl ? (
-          <img
+
+          /* =================================================
+             IMAGE
+          ================================================= */
+
+          <Image
             src={slide.imageUrl}
             alt={
               slide.title ||
               "Mahalaxmi Jewellers and Diamonds"
             }
-            className="h-full w-full object-cover"
+            fill
+            priority={safeIndex === 0}
+            unoptimized
+            sizes="100vw"
+            className="object-cover"
           />
+
         ) : (
+
+          /* =================================================
+             FALLBACK BACKGROUND
+          ================================================= */
+
           <div className="h-full w-full bg-[#1c1a17]" />
+
         )}
 
         {/* DARK OVERLAY */}
@@ -203,9 +237,9 @@ export default function HeroSlider({
 
       </div>
 
-      {/* =================================================
+      {/* =====================================================
           CONTENT
-      ================================================= */}
+      ===================================================== */}
 
       <div className="relative z-10 mx-auto flex min-h-[650px] max-w-[1400px] items-center px-5 py-24 sm:min-h-[700px] sm:px-8 sm:py-28 lg:min-h-[760px] lg:px-10">
 
@@ -214,7 +248,9 @@ export default function HeroSlider({
           className="mx-auto w-full max-w-5xl text-center"
         >
 
-          {/* LABEL */}
+          {/* =================================================
+              LABEL
+          ================================================= */}
 
           <div className="flex items-center justify-center gap-3 sm:gap-4">
 
@@ -229,14 +265,18 @@ export default function HeroSlider({
 
           </div>
 
-          {/* TITLE */}
+          {/* =================================================
+              TITLE
+          ================================================= */}
 
           <h1 className="mt-8 font-display text-5xl font-normal leading-[1.02] tracking-[-0.03em] text-white sm:text-6xl md:text-7xl lg:text-[82px]">
             {slide.title ||
               "Timeless Elegance"}
           </h1>
 
-          {/* DESCRIPTION */}
+          {/* =================================================
+              DESCRIPTION
+          ================================================= */}
 
           <p className="mx-auto mt-8 max-w-2xl text-sm leading-7 text-[#f5f0e8] sm:text-base sm:leading-8 md:text-lg">
             Discover exquisite gold and
@@ -245,7 +285,9 @@ export default function HeroSlider({
             moments.
           </p>
 
-          {/* GOLD + DIAMOND BUTTONS */}
+          {/* =================================================
+              GOLD + DIAMOND BUTTONS
+          ================================================= */}
 
           <div className="mx-auto mt-10 flex w-full max-w-xl flex-col gap-3 sm:flex-row sm:gap-4">
 
@@ -265,7 +307,9 @@ export default function HeroSlider({
 
           </div>
 
-          {/* DIVIDER */}
+          {/* =================================================
+              DIVIDER
+          ================================================= */}
 
           <div className="mx-auto mt-14 flex items-center justify-center gap-3">
 
@@ -283,9 +327,9 @@ export default function HeroSlider({
 
       </div>
 
-      {/* =================================================
+      {/* =====================================================
           SLIDE INDICATORS
-      ================================================= */}
+      ===================================================== */}
 
       {slideCount > 1 && (
         <div className="absolute bottom-8 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2">

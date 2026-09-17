@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import pb from "@/lib/pocketbase";
 import type { Rate } from "@/services/rate.service";
 
 type Props = {
@@ -52,18 +51,48 @@ export default function EditRateForm({ rate }: Props) {
     try {
       setSaving(true);
 
-      await pb.collection("Rates").update(rate.id, {
-        rate: numericRate,
-        active,
-      });
+      /*
+       * The admin API expects FormData.
+       * Do NOT manually set Content-Type here.
+       * The browser will automatically set the correct
+       * multipart/form-data boundary.
+       */
+      const formData = new FormData();
 
+      formData.append("rate", String(numericRate));
+      formData.append("active", String(active));
+
+      const response = await fetch(
+        `/api/admin/rates/${encodeURIComponent(rate.id)}`,
+        {
+          method: "PATCH",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => null);
+
+        throw new Error(
+          data?.error ||
+            data?.message ||
+            "Unable to update the rate."
+        );
+      }
+
+      /*
+       * Go back to the Rates dashboard.
+       * Refresh the server-rendered rates list.
+       */
       router.push("/admin/rates");
       router.refresh();
     } catch (err) {
-      console.error(err);
+      console.error("Failed to update rate:", err);
 
       setError(
-        "Unable to update the rate. Please try again."
+        err instanceof Error
+          ? err.message
+          : "Unable to update the rate. Please try again."
       );
     } finally {
       setSaving(false);
@@ -106,6 +135,7 @@ export default function EditRateForm({ rate }: Props) {
       className="rounded-2xl border border-[#D8C9B5] bg-[#FAF6EE] p-6 shadow-[0_4px_18px_rgba(80,60,30,0.04)] md:p-8"
     >
       {/* Collection */}
+
       <div>
         <label className="text-sm font-semibold text-[#40382F]">
           Collection
@@ -117,6 +147,7 @@ export default function EditRateForm({ rate }: Props) {
       </div>
 
       {/* Purity */}
+
       <div className="mt-5">
         <label className="text-sm font-semibold text-[#40382F]">
           Purity
@@ -128,6 +159,7 @@ export default function EditRateForm({ rate }: Props) {
       </div>
 
       {/* Rate */}
+
       <div className="mt-5">
         <label
           htmlFor="rate"
@@ -151,6 +183,7 @@ export default function EditRateForm({ rate }: Props) {
       </div>
 
       {/* Active */}
+
       <div className="mt-5 flex items-center justify-between rounded-xl border border-[#D8C9B5] bg-[#F8F2E8] p-4">
         <div>
           <p className="font-semibold text-[#302A23]">
@@ -181,6 +214,7 @@ export default function EditRateForm({ rate }: Props) {
       </div>
 
       {/* Error */}
+
       {error && (
         <p className="mt-5 rounded-xl border border-[#C58B84] bg-[#F7E9E7] px-4 py-3 text-sm font-medium text-[#9A4F49]">
           {error}
@@ -188,6 +222,7 @@ export default function EditRateForm({ rate }: Props) {
       )}
 
       {/* Buttons */}
+
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
         <button
           type="submit"

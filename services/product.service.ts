@@ -1,9 +1,10 @@
-import type {
-  RecordListOptions,
-  RecordModel,
-} from "pocketbase";
+import {
+  APPWRITE_DATABASE_ID,
+  tablesDB,
+} from "@/lib/appwrite";
 
-import pb from "@/lib/pocketbase";
+import { Query } from "node-appwrite";
+
 import type { Product } from "@/types/product";
 
 export type ProductFilters = {
@@ -23,242 +24,531 @@ export type ProductPage = {
   totalPages: number;
 };
 
-/* --------------------------------------------------
-   PRODUCT LIST OPTIONS
--------------------------------------------------- */
+/* =========================================================
+   APPWRITE RECORD TYPE
+========================================================= */
 
-function getProductListOptions(
-  filters: ProductFilters
-): RecordListOptions {
-  const expressions: string[] = [];
+type AppwriteRecord = Record<string, unknown>;
 
-  const parameters: Record<string, string | boolean> = {};
+/* =========================================================
+   HELPERS
+========================================================= */
 
-  const search = filters.search?.trim();
-
-  if (search) {
-    expressions.push(
-      "(name ~ {:search} || slug ~ {:search})"
-    );
-
-    parameters.search = search;
-  }
-
-  if (filters.collection) {
-    expressions.push(
-      "collection = {:collection}"
-    );
-
-    parameters.collection = filters.collection;
-  }
-
-  if (filters.category) {
-    expressions.push(
-      "category = {:category}"
-    );
-
-    parameters.category = filters.category;
-  }
-
-  if (filters.brand) {
-    expressions.push(
-      "brand = {:brand}"
-    );
-
-    parameters.brand = filters.brand;
-  }
-
-  if (typeof filters.active === "boolean") {
-    expressions.push(
-      "active = {:active}"
-    );
-
-    parameters.active = filters.active;
-  }
-
-  if (typeof filters.featured === "boolean") {
-    expressions.push(
-      "featured = {:featured}"
-    );
-
-    parameters.featured = filters.featured;
-  }
-
-  return {
-    sort: "-created",
-    expand: "category,brand",
-
-    ...(expressions.length > 0
-      ? {
-          filter: pb.filter(
-            expressions.join(" && "),
-            parameters
-          ),
-        }
-      : {}),
-
-    requestKey: null,
-  };
+function getString(
+  record: AppwriteRecord,
+  key: string
+): string {
+  return String(record[key] ?? "");
 }
 
-/* --------------------------------------------------
-   MAP POCKETBASE PRODUCT
--------------------------------------------------- */
+function getBoolean(
+  record: AppwriteRecord,
+  key: string
+): boolean {
+  return Boolean(record[key]);
+}
+
+function getNumber(
+  record: AppwriteRecord,
+  key: string
+): number {
+  return Number(record[key] ?? 0);
+}
+
+function getDriveImages(
+  record: AppwriteRecord
+): string[] {
+  const value = record.driveImages;
+
+  if (Array.isArray(value)) {
+    return value
+      .map(String)
+      .filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map(String)
+          .filter(Boolean);
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+function getDriveImageUrls(
+  driveImages: string[]
+): string[] {
+  return driveImages.map(
+    (fileId) =>
+      `/api/media/${encodeURIComponent(fileId)}`
+  );
+}
+
+function getDriveVideoUrl(
+  record: AppwriteRecord
+): string {
+  const driveVideo = getString(
+    record,
+    "driveVideo"
+  ).trim();
+
+  if (!driveVideo) {
+    return "";
+  }
+
+  return `/api/media/${encodeURIComponent(
+    driveVideo
+  )}`;
+}
+
+/* =========================================================
+   COLLECTION CACHE
+========================================================= */
+
+type CollectionInfo = {
+  id: string;
+  name: string;
+};
+
+type CategoryInfo = {
+  id: string;
+  name: string;
+};
+
+async function getCollectionInfo(): Promise<
+  CollectionInfo[]
+> {
+  try {
+    const result = await tablesDB.listRows({
+      databaseId: APPWRITE_DATABASE_ID,
+      tableId: "collections",
+      queries: [
+        Query.limit(100),
+      ],
+    });
+
+    return result.rows.map((row) => {
+      const record =
+        row as unknown as AppwriteRecord;
+
+      return {
+        id: String(record.$id ?? ""),
+        name: String(record.name ?? ""),
+      };
+    });
+  } catch (error) {
+    console.error(
+      "Failed to load product collections:",
+      error
+    );
+
+    return [];
+  }
+}
+
+async function getCategoryInfo(): Promise<
+  CategoryInfo[]
+> {
+  try {
+    const result = await tablesDB.listRows({
+      databaseId: APPWRITE_DATABASE_ID,
+      tableId: "categories",
+      queries: [
+        Query.limit(100),
+      ],
+    });
+
+    return result.rows.map((row) => {
+      const record =
+        row as unknown as AppwriteRecord;
+
+      return {
+        id: String(record.$id ?? ""),
+        name: String(record.name ?? ""),
+      };
+    });
+  } catch (error) {
+    console.error(
+      "Failed to load product categories:",
+      error
+    );
+
+    return [];
+  }
+}
+
+/* =========================================================
+   MAP APPWRITE PRODUCT
+========================================================= */
 
 function mapProduct(
-  record: RecordModel
+  record: AppwriteRecord,
+  collections: CollectionInfo[],
+  categories: CategoryInfo[]
 ): Product {
-  const categoryName =
-    record.expand?.category?.name ?? "";
-
-  const brandName =
-    record.expand?.brand?.name ?? "";
-
-  const images = Array.isArray(record.images)
-    ? record.images.map(String)
-    : [];
-
-  /* -----------------------------------------------
-     CREATE IMAGE URLS
-  ------------------------------------------------ */
-
-  const imageUrl =
-    images.length > 0
-      ? pb.files.getURL(
-          record,
-          images[0]
-        )
-      : "";
-
-  const imageUrls = images.map(
-    (image) =>
-      pb.files.getURL(record, image)
+  const collectionId = getString(
+    record,
+    "collectionId"
   );
 
-  /* -----------------------------------------------
-     VIDEO URL
-  ------------------------------------------------ */
+  const categoryId = getString(
+    record,
+    "categoryId"
+  );
 
-  const video =
-    record.video
-      ? pb.files.getURL(
-          record,
-          String(record.video)
-        )
+  const collectionRecord =
+    collections.find(
+      (item) => item.id === collectionId
+    );
+
+  const categoryRecord =
+    categories.find(
+      (item) => item.id === categoryId
+    );
+
+  const collectionName =
+    collectionRecord?.name ?? "";
+
+  const categoryName =
+    categoryRecord?.name ?? "";
+
+  const driveImages =
+    getDriveImages(record);
+
+  const imageUrls =
+    getDriveImageUrls(driveImages);
+
+  const imageUrl =
+    imageUrls.length > 0
+      ? imageUrls[0]
       : "";
 
-  /* -----------------------------------------------
-     RETURN PRODUCT
-  ------------------------------------------------ */
+  const driveVideo =
+    getString(
+      record,
+      "driveVideo"
+    ).trim();
+
+  const videoUrl =
+    getDriveVideoUrl(record);
 
   return {
-    id: record.id,
+    id: getString(record, "$id"),
 
-    collectionId: String(
-      record.collectionId ?? ""
+    collectionId,
+
+    name: getString(
+      record,
+      "name"
     ),
 
-    name: String(
-      record.name ?? ""
+    slug: getString(
+      record,
+      "slug"
     ),
 
-    slug: String(
-      record.slug ?? ""
+    collection:
+      collectionName,
+
+    category:
+      categoryId,
+
+    // Brands are no longer used.
+    brand: "",
+
+    categoryName,
+
+    brandName: "",
+
+    purity: getString(
+      record,
+      "purity"
     ),
 
-    collection: String(
-      record.collection ?? ""
+    description: getString(
+      record,
+      "description"
     ),
 
-    category: String(
-      record.category ?? ""
+    hyd: getString(
+      record,
+      "hyd"
     ),
 
-    brand: String(
-      record.brand ?? ""
+    hallmark: getString(
+      record,
+      "hallmark"
     ),
 
-    categoryName: String(
-      categoryName
+    igi: getString(
+      record,
+      "igi"
     ),
 
-    brandName: String(
-      brandName
+    sgl: getString(
+      record,
+      "sgl"
     ),
 
-   purity: String(
-  record.purity ?? ""
-),
-
-// Gold product details
-hyd: String(
-  record.hyd ?? ""
-),
-
-hallmark: String(
-  record.hallmark ?? ""
-),
-
-// Diamond product details
-igi: String(
-  record.igi ?? ""
-),
-
-sgl: String(
-  record.sgl ?? ""
-),
-
-weight: Number(
-  record.weight ?? 0
-),
-
-makingCharges: Number(
-  record.makingCharges ?? 0
-),
-
-description: String(
-  record.description ?? ""
-),
-
-    featured: Boolean(
-      record.featured
+    // Kept in database/CMS as requested.
+    weight: getNumber(
+      record,
+      "weight"
     ),
 
-    active: Boolean(
-      record.active
-    ),
+    makingCharges:
+      getNumber(
+        record,
+        "makingCharges"
+      ),
 
-    images,
+    featured:
+      getBoolean(
+        record,
+        "featured"
+      ),
+
+    active:
+      getBoolean(
+        record,
+        "active"
+      ),
+
+    // Google Drive media
+    images: [],
+
+    driveImages,
+
     imageUrls,
+
     imageUrl,
 
-    video,
+    driveVideo,
 
-    created: String(
-      record.created ?? ""
-    ),
+    video: videoUrl,
 
-    updated: String(
-      record.updated ?? ""
-    ),
+    created:
+      getString(
+        record,
+        "$createdAt"
+      ),
+
+    updated:
+      getString(
+        record,
+        "$updatedAt"
+      ),
   };
 }
 
-/* --------------------------------------------------
+/* =========================================================
+   BUILD PRODUCT QUERIES
+========================================================= */
+
+async function resolveCollectionFilter(
+  collection?: string
+): Promise<string | null> {
+  if (!collection) {
+    return null;
+  }
+
+  const collections = await getCollectionInfo();
+
+  const wanted = collection
+    .trim()
+    .toLowerCase();
+
+  const match = collections.find((item) => {
+    const name = item.name
+      .trim()
+      .toLowerCase();
+
+    if (wanted === "gold") {
+      return (
+        name === "gold" ||
+        name.includes("gold")
+      );
+    }
+
+    if (wanted === "diamond") {
+      return (
+        name === "diamond" ||
+        name.includes("diamond")
+      );
+    }
+
+    return name === wanted;
+  });
+
+  if (!match) {
+    console.error(
+      `Collection "${collection}" was not found in the collections table.`
+    );
+
+    return null;
+  }
+
+  return match.id;
+}
+
+function buildProductQueries(
+  filters: ProductFilters,
+  collectionId: string | null
+) {
+  const queries = [];
+
+  if (filters.search?.trim()) {
+    const search =
+      filters.search
+        .trim()
+        .toLowerCase();
+
+    // Appwrite doesn't provide PocketBase's
+    // "name ~ search || slug ~ search"
+    // syntax through a single Query helper.
+    // We therefore use full-text search only
+    // where available and perform a final
+    // client-side filter below.
+    queries.push(
+      Query.search(
+        "name",
+        search
+      )
+    );
+  }
+
+ if (filters.collection) {
+  if (collectionId) {
+    queries.push(
+      Query.equal(
+        "collectionId",
+        [collectionId]
+      )
+    );
+  } else {
+    // Requested collection does not exist.
+    // Force zero results instead of showing
+    // products from another collection.
+    queries.push(
+      Query.equal(
+        "collectionId",
+        ["__NO_MATCHING_COLLECTION__"]
+      )
+    );
+  }
+}
+
+  if (filters.category) {
+    queries.push(
+      Query.equal(
+        "categoryId",
+        [filters.category]
+      )
+    );
+  }
+
+  if (
+    typeof filters.active ===
+    "boolean"
+  ) {
+    queries.push(
+      Query.equal(
+        "active",
+        [filters.active]
+      )
+    );
+  }
+
+  if (
+    typeof filters.featured ===
+    "boolean"
+  ) {
+    queries.push(
+      Query.equal(
+        "featured",
+        [filters.featured]
+      )
+    );
+  }
+
+  queries.push(
+    Query.orderDesc(
+      "$createdAt"
+    )
+  );
+
+  return queries;
+}
+
+/* =========================================================
    GET ALL PRODUCTS
--------------------------------------------------- */
+========================================================= */
 
 export async function getProducts(
   filters: ProductFilters = {}
 ): Promise<Product[]> {
   try {
-    const records = await pb
-      .collection("Products")
-      .getFullList(
-        getProductListOptions(filters)
+    const [
+      collectionId,
+      collections,
+      categories,
+    ] = await Promise.all([
+      resolveCollectionFilter(
+        filters.collection
+      ),
+      getCollectionInfo(),
+      getCategoryInfo(),
+    ]);
+
+    const result =
+      await tablesDB.listRows({
+        databaseId:
+          APPWRITE_DATABASE_ID,
+        tableId: "products",
+        queries:
+          buildProductQueries(
+            filters,
+            collectionId
+          ),
+      });
+
+    let products =
+      result.rows.map((row) =>
+        mapProduct(
+          row as unknown as AppwriteRecord,
+          collections,
+          categories
+        )
       );
 
-    return records.map(mapProduct);
+    // Final client-side search also checks slug.
+    if (filters.search?.trim()) {
+      const search =
+        filters.search
+          .trim()
+          .toLowerCase();
+
+      products =
+        products.filter(
+          (product) =>
+            product.name
+              .toLowerCase()
+              .includes(search) ||
+            product.slug
+              .toLowerCase()
+              .includes(search)
+        );
+    }
+
+    return products;
   } catch (error) {
     console.error(
       "Failed to load products:",
@@ -269,9 +559,9 @@ export async function getProducts(
   }
 }
 
-/* --------------------------------------------------
+/* =========================================================
    GET PAGINATED PRODUCTS
--------------------------------------------------- */
+========================================================= */
 
 export async function getProductsPage(
   filters: ProductFilters = {},
@@ -279,28 +569,64 @@ export async function getProductsPage(
   perPage = 10
 ): Promise<ProductPage> {
   try {
-    const result = await pb
-      .collection("Products")
-      .getList(
-        Math.max(1, page),
-        Math.max(1, perPage),
-        getProductListOptions(filters)
+    const safePage =
+      Math.max(1, page);
+
+    const safePerPage =
+      Math.max(1, perPage);
+
+    const [
+      collectionId,
+      collections,
+      categories,
+    ] = await Promise.all([
+      resolveCollectionFilter(
+        filters.collection
+      ),
+      getCollectionInfo(),
+      getCategoryInfo(),
+    ]);
+
+    const result =
+      await tablesDB.listRows({
+        databaseId:
+          APPWRITE_DATABASE_ID,
+        tableId: "products",
+        queries: [
+          ...buildProductQueries(
+            filters,
+            collectionId
+          ),
+          Query.limit(
+            safePerPage
+          ),
+          Query.offset(
+            (safePage - 1) *
+              safePerPage
+          ),
+        ],
+      });
+
+    const items =
+      result.rows.map((row) =>
+        mapProduct(
+          row as unknown as AppwriteRecord,
+          collections,
+          categories
+        )
       );
 
     return {
-      items: result.items.map(
-        mapProduct
-      ),
-
-      page: result.page,
-
-      perPage: result.perPage,
-
+      items,
+      page: safePage,
+      perPage: safePerPage,
       totalItems:
-        result.totalItems,
-
+        result.total,
       totalPages:
-        result.totalPages,
+        Math.ceil(
+          result.total /
+            safePerPage
+        ),
     };
   } catch (error) {
     console.error(
@@ -312,22 +638,36 @@ export async function getProductsPage(
   }
 }
 
-/* --------------------------------------------------
+/* =========================================================
    GET PRODUCT BY ID
--------------------------------------------------- */
+========================================================= */
 
 export async function getProduct(
   id: string
 ): Promise<Product> {
   try {
-    const record = await pb
-      .collection("Products")
-      .getOne(id, {
-        expand: "category,brand",
-        requestKey: null,
-      });
+    const [
+      record,
+      collections,
+      categories,
+    ] = await Promise.all([
+      tablesDB.getRow({
+        databaseId:
+          APPWRITE_DATABASE_ID,
+        tableId: "products",
+        rowId: id,
+      }),
 
-    return mapProduct(record);
+      getCollectionInfo(),
+
+      getCategoryInfo(),
+    ]);
+
+    return mapProduct(
+      record as unknown as AppwriteRecord,
+      collections,
+      categories
+    );
   } catch (error) {
     console.error(
       `Failed to load product ${id}:`,
@@ -338,15 +678,17 @@ export async function getProduct(
   }
 }
 
-/* --------------------------------------------------
+/* =========================================================
    GET PRODUCT BY SLUG
--------------------------------------------------- */
+========================================================= */
 
 export async function getProductBySlug(
   slug: string
 ): Promise<Product> {
   const cleanSlug =
-    decodeURIComponent(slug).trim();
+    decodeURIComponent(
+      slug
+    ).trim();
 
   if (!cleanSlug) {
     throw new Error(
@@ -355,37 +697,56 @@ export async function getProductBySlug(
   }
 
   try {
-    const result = await pb
-      .collection("Products")
-      .getList(
-        1,
-        1,
-        {
-          filter: pb.filter(
-            "slug = {:slug}",
-            {
-              slug: cleanSlug,
-            }
+    const [
+      result,
+      collections,
+      categories,
+    ] = await Promise.all([
+      tablesDB.listRows({
+        databaseId:
+          APPWRITE_DATABASE_ID,
+        tableId: "products",
+        queries: [
+          Query.equal(
+            "slug",
+            [cleanSlug]
           ),
+          Query.limit(1),
+        ],
+      }),
 
-          expand: "category,brand",
+      getCollectionInfo(),
 
-          requestKey: null,
-        }
-      );
+      getCategoryInfo(),
+    ]);
 
-    if (result.items.length === 0) {
-      throw new Error(
-        `Product not found: ${cleanSlug}`
+    if (
+      result.rows.length > 0
+    ) {
+      return mapProduct(
+        result.rows[0] as unknown as AppwriteRecord,
+        collections,
+        categories
       );
     }
 
+    // Fallback to Appwrite row ID.
+    const record =
+      await tablesDB.getRow({
+        databaseId:
+          APPWRITE_DATABASE_ID,
+        tableId: "products",
+        rowId: cleanSlug,
+      });
+
     return mapProduct(
-      result.items[0]
+      record as unknown as AppwriteRecord,
+      collections,
+      categories
     );
   } catch (error) {
     console.error(
-      "PRODUCT LOOKUP FAILED:",
+      `PRODUCT LOOKUP FAILED: ${cleanSlug}`,
       error
     );
 
@@ -393,63 +754,52 @@ export async function getProductBySlug(
   }
 }
 
-/* --------------------------------------------------
+/* =========================================================
    CREATE PRODUCT
--------------------------------------------------- */
+   ---------------------------------------------------------
+   Product creation is handled by the admin API because
+   Google Drive media must be uploaded before the Appwrite
+   row is created.
+========================================================= */
 
 export async function createProduct(
-  data: FormData
+  _data: FormData
 ) {
-  try {
-    return await pb
-      .collection("Products")
-      .create(data);
-  } catch (error) {
-    console.error(
-      "Failed to create product:",
-      error
-    );
-
-    throw error;
-  }
+  throw new Error(
+    "Product creation must be handled through the admin API."
+  );
 }
 
-/* --------------------------------------------------
+/* =========================================================
    UPDATE PRODUCT
--------------------------------------------------- */
+   ---------------------------------------------------------
+   Product updates are handled by the admin API because
+   Google Drive media must be processed first.
+========================================================= */
 
 export async function updateProduct(
-  id: string,
-  data: FormData
+  _id: string,
+  _data: FormData
 ) {
-  try {
-    return await pb
-      .collection("Products")
-      .update(
-        id,
-        data
-      );
-  } catch (error) {
-    console.error(
-      `Failed to update product ${id}:`,
-      error
-    );
-
-    throw error;
-  }
+  throw new Error(
+    "Product updates must be handled through the admin API."
+  );
 }
 
-/* --------------------------------------------------
+/* =========================================================
    DELETE PRODUCT
--------------------------------------------------- */
+========================================================= */
 
 export async function deleteProduct(
   id: string
 ) {
   try {
-    return await pb
-      .collection("Products")
-      .delete(id);
+    return await tablesDB.deleteRow({
+      databaseId:
+        APPWRITE_DATABASE_ID,
+      tableId: "products",
+      rowId: id,
+    });
   } catch (error) {
     console.error(
       `Failed to delete product ${id}:`,

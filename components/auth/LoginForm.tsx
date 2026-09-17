@@ -1,8 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-
 type Props = {
   nextPath: string;
 };
@@ -12,7 +10,7 @@ type LoginResponse = {
 };
 
 export default function LoginForm({ nextPath }: Props) {
-  const router = useRouter();
+ 
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -54,8 +52,7 @@ export default function LoginForm({ nextPath }: Props) {
         return;
       }
 
-      router.replace(nextPath);
-      router.refresh();
+      window.location.assign(nextPath);
     } catch {
       setError(
         "Unable to sign in. Check your connection and try again."
