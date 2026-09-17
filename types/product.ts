@@ -31,7 +31,7 @@ export interface Product {
   featured: boolean;
   active: boolean;
 
-  // PocketBase media
+  // Legacy-compatible media fields
   images: string[];
   imageUrls: string[];
   imageUrl: string;

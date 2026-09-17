@@ -411,12 +411,9 @@ function buildProductQueries(
         .trim()
         .toLowerCase();
 
-    // Appwrite doesn't provide PocketBase's
-    // "name ~ search || slug ~ search"
-    // syntax through a single Query helper.
-    // We therefore use full-text search only
-    // where available and perform a final
-    // client-side filter below.
+    // Appwrite search currently targets the product name.
+    // Slug matching is handled by the final client-side
+    // filter below.
     queries.push(
       Query.search(
         "name",
@@ -425,26 +422,26 @@ function buildProductQueries(
     );
   }
 
- if (filters.collection) {
-  if (collectionId) {
-    queries.push(
-      Query.equal(
-        "collectionId",
-        [collectionId]
-      )
-    );
-  } else {
-    // Requested collection does not exist.
-    // Force zero results instead of showing
-    // products from another collection.
-    queries.push(
-      Query.equal(
-        "collectionId",
-        ["__NO_MATCHING_COLLECTION__"]
-      )
-    );
+  if (filters.collection) {
+    if (collectionId) {
+      queries.push(
+        Query.equal(
+          "collectionId",
+          [collectionId]
+        )
+      );
+    } else {
+      // Requested collection does not exist.
+      // Force zero results instead of showing
+      // products from another collection.
+      queries.push(
+        Query.equal(
+          "collectionId",
+          ["__NO_MATCHING_COLLECTION__"]
+        )
+      );
+    }
   }
-}
 
   if (filters.category) {
     queries.push(
