@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import {
@@ -29,7 +30,10 @@ export default async function HomePage() {
   try {
     stores = await getStores();
   } catch (error) {
-    console.error("Failed to load stores:", error);
+    console.error(
+      "Failed to load stores:",
+      error
+    );
   }
 
   /* =====================================================
@@ -41,9 +45,13 @@ export default async function HomePage() {
       active: true,
     });
 
-    newestProducts = newestProducts.slice(0, 4);
+    newestProducts =
+      newestProducts.slice(0, 4);
   } catch (error) {
-    console.error("Failed to load newest products:", error);
+    console.error(
+      "Failed to load newest products:",
+      error
+    );
   }
 
   /* =====================================================
@@ -53,7 +61,10 @@ export default async function HomePage() {
   try {
     heroSlides = await getHeroSlides();
   } catch (error) {
-    console.error("Failed to load hero slides:", error);
+    console.error(
+      "Failed to load hero slides:",
+      error
+    );
   }
 
   /* =====================================================
@@ -63,40 +74,54 @@ export default async function HomePage() {
   try {
     ourStory = await getOurStory();
   } catch (error) {
-    console.error("Failed to load Our Story:", error);
+    console.error(
+      "Failed to load Our Story:",
+      error
+    );
   }
 
   /* =====================================================
      ACTIVE HERO SLIDES
   ===================================================== */
 
-  const activeHeroSlides = heroSlides
-    .filter(
-      (slide) =>
-        slide.active &&
-        slide.page === "Home" &&
-        (slide.videoUrl || slide.imageUrl)
-    )
-    .sort((a, b) => a.order - b.order);
+  const activeHeroSlides =
+    heroSlides
+      .filter(
+        (slide) =>
+          slide.active &&
+          slide.page === "Home" &&
+          (slide.videoUrl ||
+            slide.imageUrl)
+      )
+      .sort(
+        (a, b) =>
+          a.order - b.order
+      );
 
   /* =====================================================
      FIND STORES
   ===================================================== */
 
-  const goldStore = stores.find(
-    (store) => store.collection === "Gold"
-  );
+  const goldStore =
+    stores.find(
+      (store) =>
+        store.collection === "Gold"
+    );
 
-  const diamondStore = stores.find(
-    (store) => store.collection === "Diamond"
-  );
+  const diamondStore =
+    stores.find(
+      (store) =>
+        store.collection ===
+        "Diamond"
+    );
 
   /* =====================================================
      OUR STORY CONTENT
   ===================================================== */
 
   const storyTitle =
-    ourStory?.title || "Tradition Meets Elegance";
+    ourStory?.title ||
+    "Tradition Meets Elegance";
 
   const storyParagraphOne =
     ourStory?.paragraphOne ||
@@ -107,10 +132,20 @@ export default async function HomePage() {
     "From classic gold jewellery to elegant diamond creations, every piece is selected with an appreciation for beauty, detail and lasting elegance.";
 
   const storyButtonText =
-    ourStory?.buttonText || "Explore Our Collections";
+    ourStory?.buttonText ||
+    "Explore Our Collections";
 
   const storyButtonLink =
-    ourStory?.buttonLink || "/categories";
+    ourStory?.buttonLink ||
+    "/categories";
+
+  const storyImageOne =
+    ourStory?.imageUrlOne ||
+    "";
+
+  const storyImageTwo =
+    ourStory?.imageUrlTwo ||
+    "";
 
   return (
     <main className="min-h-screen bg-[#f8f5ef] text-[#1c1a17]">
@@ -119,7 +154,9 @@ export default async function HomePage() {
           HERO
       ================================================= */}
 
-      <HeroSlider slides={activeHeroSlides} />
+      <HeroSlider
+        slides={activeHeroSlides}
+      />
 
       {/* =================================================
           FEATURED COLLECTION
@@ -127,8 +164,6 @@ export default async function HomePage() {
 
       <section className="border-b border-[#e5ded2] bg-[#f8f5ef]">
         <div className="mx-auto max-w-[1400px] px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
-
-          {/* Section heading */}
 
           <div className="mx-auto mb-12 max-w-2xl text-center">
 
@@ -150,87 +185,87 @@ export default async function HomePage() {
 
           </div>
 
-          {/* Products */}
-
           {newestProducts.length > 0 ? (
             <>
+
               <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
 
-                {newestProducts.map((product) => {
+                {newestProducts.map(
+                  (product) => {
 
-                  const productImage =
-                    product.imageUrls?.[0] ||
-                    product.imageUrl ||
-                    "";
+                    /*
+                     * IMPORTANT:
+                     * Keep the original product image logic.
+                     */
+                    const productImage =
+                      product.imageUrls?.[0] ||
+                      product.imageUrl ||
+                      "";
 
-                  return (
-                    <Link
-                      key={product.id}
-                      href={`/products/${product.slug}`}
-                      className="group"
-                    >
+                    return (
+                      <Link
+                        key={product.id}
+                        href={`/products/${product.slug}`}
+                        className="group"
+                      >
 
-                      {/* Product image */}
+                        <div className="relative aspect-square overflow-hidden border border-[#e5ded2] bg-[#f1ece3]">
 
-                      <div className="relative aspect-square overflow-hidden border border-[#e5ded2] bg-[#f1ece3]">
-
-                        {productImage ? (
-                          <img
-                            src={productImage}
-                            alt={product.name}
-                            className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
-                          />
-                        ) : (
-                          <div className="flex h-full items-center justify-center text-xs uppercase tracking-[0.15em] text-[#aaa196]">
-                            No Image
-                          </div>
-                        )}
-
-                        {/* New badge */}
-
-                        <span className="absolute left-3 top-3 bg-[#b08d57] px-3 py-1.5 text-[8px] font-semibold uppercase tracking-[0.16em] text-white sm:text-[9px]">
-                          New
-                        </span>
-
-                      </div>
-
-                      {/* Product information */}
-
-                      <div className="pt-4">
-
-                        <p className="text-[9px] font-medium uppercase tracking-[0.2em] text-[#b08d57] sm:text-[10px]">
-                          {product.collection}
-                        </p>
-
-                        <h3 className="mt-1.5 line-clamp-2 font-display text-base font-normal leading-6 text-[#1c1a17] transition-colors group-hover:text-[#b08d57] sm:text-lg">
-                          {product.name}
-                        </h3>
-
-                        <div className="mt-2 flex items-center gap-3 text-[10px] uppercase tracking-[0.08em] text-[#918a81] sm:text-xs">
-
-                          {product.purity && (
-                            <span>
-                              {product.purity}
-                            </span>
+                          {productImage ? (
+                            <Image
+                              src={productImage}
+                              alt={product.name}
+                              fill
+                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                              unoptimized
+                              className="object-cover transition duration-700 group-hover:scale-[1.04]"
+                            />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-xs uppercase tracking-[0.15em] text-[#aaa196]">
+                              No Image
+                            </div>
                           )}
 
-                          {product.weight > 0 && (
-                            <span>
-                              {product.weight} g
-                            </span>
-                          )}
+                          <span className="absolute left-3 top-3 bg-[#b08d57] px-3 py-1.5 text-[8px] font-semibold uppercase tracking-[0.16em] text-white sm:text-[9px]">
+                            New
+                          </span>
 
                         </div>
 
-                      </div>
+                        <div className="pt-4">
 
-                    </Link>
-                  );
-                })}
+                          <p className="text-[9px] font-medium uppercase tracking-[0.2em] text-[#b08d57] sm:text-[10px]">
+                            {product.collection}
+                          </p>
+
+                          <h3 className="mt-1.5 line-clamp-2 font-display text-base font-normal leading-6 text-[#1c1a17] transition-colors group-hover:text-[#b08d57] sm:text-lg">
+                            {product.name}
+                          </h3>
+
+                          <div className="mt-2 flex items-center gap-3 text-[10px] uppercase tracking-[0.08em] text-[#918a81] sm:text-xs">
+
+                            {product.purity && (
+                              <span>
+                                {product.purity}
+                              </span>
+                            )}
+
+                            {product.weight > 0 && (
+                              <span>
+                                {product.weight} g
+                              </span>
+                            )}
+
+                          </div>
+
+                        </div>
+
+                      </Link>
+                    );
+                  }
+                )}
 
               </div>
-
-              {/* View all */}
 
               <div className="mt-10 text-center">
 
@@ -239,19 +274,15 @@ export default async function HomePage() {
                   className="inline-flex items-center gap-2 border-b border-[#b08d57] pb-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#1c1a17] transition-colors hover:text-[#b08d57] sm:text-xs"
                 >
                   View All Collections
-
                   <span>
                     →
                   </span>
-
                 </Link>
 
               </div>
 
             </>
           ) : (
-
-            /* Empty state */
 
             <div className="border border-[#e5ded2] bg-[#f1ece3] px-6 py-20 text-center">
 
@@ -270,6 +301,7 @@ export default async function HomePage() {
               </p>
 
             </div>
+
           )}
 
         </div>
@@ -279,142 +311,348 @@ export default async function HomePage() {
           OUR STORY
       ================================================= */}
 
-      <section className="border-b border-[#e5ded2] bg-[#f1ece3]">
+      {ourStory && ourStory.active && (
+        <section className="relative overflow-hidden border-b border-[#ded4c4] bg-[#eee7dc]">
 
-        <div className="mx-auto max-w-[1200px] px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-40 top-16 h-[520px] w-[520px] rounded-full border border-[#b08d57]/10"
+          />
 
-          <div className="mx-auto max-w-3xl text-center">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-24 top-32 h-[360px] w-[360px] rounded-full border border-[#b08d57]/10"
+          />
 
-            <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#b08d57] sm:text-xs sm:tracking-[0.4em]">
-              Our Story
-            </p>
+          <div className="relative mx-auto max-w-[1400px] px-5 py-20 sm:px-8 sm:py-28 lg:px-10 lg:py-32">
 
-            <h2 className="mt-4 font-display text-4xl font-normal tracking-[-0.02em] text-[#1c1a17] sm:text-5xl">
-              {storyTitle}
-            </h2>
+            <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20 xl:gap-28">
 
-            <div className="mx-auto mt-5 h-px w-12 bg-[#b08d57]" />
+              <div className="relative min-h-[620px] sm:min-h-[700px] lg:min-h-[760px]">
 
-            <p className="mt-7 text-sm leading-8 text-[#777169] sm:text-base sm:leading-8">
-              {storyParagraphOne}
-            </p>
+                <div
+                  aria-hidden="true"
+                  className="absolute left-3 top-3 h-[calc(100%-6px)] w-[calc(100%-6px)] border border-[#b08d57]/35"
+                />
 
-            <p className="mt-5 text-sm leading-8 text-[#777169] sm:text-base sm:leading-8">
-              {storyParagraphTwo}
-            </p>
+                <div className="absolute left-0 top-0 h-[540px] w-[70%] overflow-hidden bg-[#ddd3c4] shadow-[0_24px_70px_rgba(40,32,24,0.14)] sm:h-[620px] lg:h-[680px]">
 
-            <div className="mt-8">
+                  {storyImageOne ? (
+                    <Image
+                      src={storyImageOne}
+                      alt="Mahalaxmi Jewellers heritage and craftsmanship"
+                      fill
+                      sizes="(max-width: 640px) 70vw, 50vw"
+                      unoptimized
+                      className="object-cover transition duration-1000 hover:scale-[1.025]"
+                    />
+                  ) : (
+                    <div className="flex h-[540px] items-center justify-center bg-[#ddd3c4] sm:h-[620px] lg:h-[680px]">
+                      <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#8f8579]">
+                        Our Story
+                      </span>
+                    </div>
+                  )}
 
-              <Link
-                href={storyButtonLink}
-                className="inline-flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#1c1a17] transition-colors hover:text-[#b08d57] sm:text-xs"
-              >
-                {storyButtonText}
+                </div>
 
-                <span>
-                  →
-                </span>
+                <div className="absolute bottom-0 right-0 z-10 h-[350px] w-[48%] overflow-hidden border-[10px] border-[#eee7dc] bg-[#ddd3c4] shadow-[0_24px_60px_rgba(40,32,24,0.18)] sm:h-[430px] sm:border-[14px] lg:h-[470px]">
 
-              </Link>
+                  {storyImageTwo ? (
+                    <Image
+                      src={storyImageTwo}
+                      alt="Mahalaxmi Jewellers timeless jewellery"
+                      fill
+                      sizes="(max-width: 640px) 48vw, 35vw"
+                      unoptimized
+                      className="object-cover transition duration-1000 hover:scale-[1.025]"
+                    />
+                  ) : (
+                    <div className="flex h-[350px] items-center justify-center bg-[#ddd3c4] sm:h-[430px] lg:h-[470px]">
+                      <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#8f8579]">
+                        Timeless Elegance
+                      </span>
+                    </div>
+                  )}
+
+                </div>
+
+                <div className="absolute bottom-8 left-[52%] z-20 flex h-24 w-24 -translate-x-1/2 flex-col items-center justify-center rounded-full border border-[#b08d57]/50 bg-[#eee7dc]/95 text-center shadow-[0_10px_35px_rgba(40,32,24,0.12)] backdrop-blur-sm sm:bottom-10 sm:h-28 sm:w-28">
+
+                  <span className="text-[8px] font-semibold uppercase tracking-[0.25em] text-[#9b7947]">
+                    Est.
+                  </span>
+
+                  <span className="mt-1 font-display text-xl text-[#1c1a17] sm:text-2xl">
+                    1996
+                  </span>
+
+                </div>
+
+              </div>
+
+              <div className="relative lg:pl-2 xl:pl-8">
+
+                <div className="mb-8 flex items-center gap-4">
+
+                  <span className="h-px w-10 bg-[#b08d57]" />
+
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.34em] text-[#9b7947] sm:text-[10px] sm:tracking-[0.4em]">
+                    Our Story
+                  </p>
+
+                </div>
+
+                <h2 className="max-w-2xl font-display text-4xl font-normal leading-[1.05] tracking-[-0.025em] text-[#1c1a17] sm:text-5xl lg:text-6xl xl:text-[4.5rem]">
+                  {storyTitle}
+                </h2>
+
+                <div className="mt-7 h-px w-16 bg-[#b08d57]" />
+
+                <div className="mt-9 max-w-xl space-y-6">
+
+                  <p className="text-[15px] leading-8 text-[#625b53] sm:text-base sm:leading-8">
+                    {storyParagraphOne}
+                  </p>
+
+                  <p className="text-[15px] leading-8 text-[#777169] sm:text-base sm:leading-8">
+                    {storyParagraphTwo}
+                  </p>
+
+                </div>
+
+                <div className="mt-10 flex flex-wrap items-center gap-6">
+
+                  <Link
+                    href={storyButtonLink}
+                    className="group inline-flex min-h-[50px] items-center justify-center border border-[#b08d57] px-7 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#1c1a17] transition-all duration-500 hover:bg-[#b08d57] hover:text-white sm:px-8 sm:text-xs"
+                  >
+                    <span>
+                      {storyButtonText}
+                    </span>
+
+                    <span className="ml-4 transition-transform duration-500 group-hover:translate-x-1">
+                      →
+                    </span>
+                  </Link>
+
+                  <span className="text-[9px] font-medium uppercase tracking-[0.25em] text-[#a0978c]">
+                    Crafted with tradition
+                  </span>
+
+                </div>
+
+                <div className="mt-14 flex items-center gap-4">
+
+                  <span className="h-px w-20 bg-[#c9bda9]" />
+
+                  <span className="text-[8px] uppercase tracking-[0.3em] text-[#a0978c]">
+                    Mahalaxmi Jewellers &amp; Diamonds
+                  </span>
+
+                </div>
+
+              </div>
 
             </div>
 
           </div>
 
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* =================================================
-          COLLECTIONS
+          GOOGLE REVIEWS
       ================================================= */}
 
       <section className="border-b border-[#e5ded2] bg-[#f8f5ef]">
 
         <div className="mx-auto max-w-[1400px] px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
 
-          <div className="mb-12 text-center">
+          <div className="mx-auto mb-12 max-w-3xl text-center">
 
             <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#b08d57] sm:text-xs sm:tracking-[0.4em]">
-              Discover
+              From Our Customers
             </p>
 
             <h2 className="mt-4 font-display text-4xl font-normal text-[#1c1a17] sm:text-5xl">
-              Our Collections
+              Google Reviews
             </h2>
+
+            <div className="mx-auto mt-5 h-px w-12 bg-[#b08d57]" />
+
+            <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-[#777169] sm:text-base">
+              Discover what our customers say about their experience with Mahalaxmi Jewellers &amp; Diamonds.
+            </p>
 
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
 
-            {/* Gold Collection */}
+            {/* =================================================
+                GOLD STORE
+            ================================================= */}
 
-            <Link
-              href="/gold"
-              className="group border border-[#e5ded2] bg-[#f1ece3] p-8 transition-all duration-500 hover:-translate-y-1 hover:border-[#b08d57] sm:p-10 lg:p-12"
-            >
+            <div className="border border-[#e5ded2] bg-[#f1ece3] p-8 sm:p-10">
 
-              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#b08d57]">
-                Collection
-              </p>
+              <div className="flex items-start justify-between gap-6">
 
-              <h3 className="mt-4 font-display text-3xl font-normal text-[#1c1a17] sm:text-4xl">
-                Gold Jewellery
-              </h3>
+                <div>
 
-              <div className="mt-5 h-px w-10 bg-[#b08d57] transition-all duration-300 group-hover:w-16" />
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-[#b08d57]">
+                    Gold Store
+                  </p>
 
-              <p className="mt-5 max-w-lg text-sm leading-7 text-[#777169]">
-                Discover timeless gold jewellery designed
-                for every special occasion, from everyday
-                elegance to unforgettable celebrations.
-              </p>
+                  <h3 className="mt-4 font-display text-3xl font-normal leading-tight text-[#1c1a17] sm:text-4xl">
+                    Mahalaxmi Jewellers
+                  </h3>
 
-              <div className="mt-7 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#1c1a17] transition-colors group-hover:text-[#b08d57] sm:text-xs">
-                Explore Gold
+                  <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#b08d57]">
+                    (Since 1996)
+                  </p>
 
-                <span className="ml-2 transition-all duration-300 group-hover:ml-4">
-                  →
-                </span>
+                </div>
+
+                {goldStore?.logo ? (
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#b08d57]/30 bg-[#f1ece3] p-3">
+
+                    <Image
+                      src={goldStore.logo}
+                      alt="Mahalaxmi Jewellers logo"
+                      width={80}
+                      height={80}
+                      unoptimized
+                      className="h-full w-full object-contain"
+                    />
+
+                  </div>
+                ) : (
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-[#b08d57]/30 bg-[#f1ece3]">
+
+                    <span className="font-display text-2xl text-[#b08d57]">
+                      G
+                    </span>
+
+                  </div>
+                )}
+
               </div>
 
-            </Link>
+              <div className="mt-6 h-px w-11 bg-[#b08d57]" />
 
-            {/* Diamond Collection */}
+              <div className="mt-8 flex items-center gap-4">
 
-            <Link
-              href="/diamond"
-              className="group border border-[#e5ded2] bg-[#f1ece3] p-8 transition-all duration-500 hover:-translate-y-1 hover:border-[#b08d57] sm:p-10 lg:p-12"
-            >
-
-              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#b08d57]">
-                Collection
-              </p>
-
-              <h3 className="mt-4 font-display text-3xl font-normal text-[#1c1a17] sm:text-4xl">
-                Diamond Jewellery
-              </h3>
-
-              <div className="mt-5 h-px w-10 bg-[#b08d57] transition-all duration-300 group-hover:w-16" />
-
-              <p className="mt-5 max-w-lg text-sm leading-7 text-[#777169]">
-                Explore elegant diamond jewellery crafted
-                to bring brilliance and sophistication to
-                every special occasion.
-              </p>
-
-              <div className="mt-7 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#1c1a17] transition-colors group-hover:text-[#b08d57] sm:text-xs">
-                Explore Diamonds
-
-                <span className="ml-2 transition-all duration-300 group-hover:ml-4">
-                  →
+                <span className="text-[17px] tracking-[0.12em] text-[#b08d57]">
+                  ★★★★★
                 </span>
+
+                <span className="text-xs text-[#777169]">
+                  Google Reviews
+                </span>
+
               </div>
 
-            </Link>
+              <p className="mt-6 max-w-xl text-sm leading-7 text-[#777169] sm:text-base">
+                See genuine customer experiences, ratings and reviews for our Gold Jewellery store on Google.
+              </p>
+
+              <a
+                href="https://maps.app.goo.gl/LPbrNMBkQdHPZrPi6"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-9 inline-flex min-h-12.5 items-center justify-center border border-[#b08d57] px-8 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#1c1a17] transition hover:bg-[#b08d57] hover:text-white sm:text-xs"
+              >
+                Read Gold Reviews
+
+                <span className="ml-4 text-base">
+                  →
+                </span>
+              </a>
+
+            </div>
+
+            {/* =================================================
+                DIAMOND STORE
+            ================================================= */}
+
+            <div className="border border-[#e5ded2] bg-[#f1ece3] p-8 sm:p-10">
+
+              <div className="flex items-start justify-between gap-6">
+
+                <div>
+
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.35em] text-[#b08d57]">
+                    Diamond Store
+                  </p>
+
+                  <h3 className="mt-4 font-display text-3xl font-normal leading-tight text-[#1c1a17] sm:text-4xl">
+                    Mahalaxmi Jewels &amp; Diamonds
+                  </h3>
+
+                </div>
+
+                {diamondStore?.logo ? (
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#b08d57]/30 bg-[#f1ece3] p-3">
+
+                    <Image
+                      src={diamondStore.logo}
+                      alt="Mahalaxmi Jewels & Diamonds logo"
+                      width={80}
+                      height={80}
+                      unoptimized
+                      className="h-full w-full object-contain"
+                    />
+
+                  </div>
+                ) : (
+                  <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-[#b08d57]/30 bg-[#f1ece3]">
+
+                    <span className="font-display text-2xl text-[#b08d57]">
+                      D
+                    </span>
+
+                  </div>
+                )}
+
+              </div>
+
+              <div className="mt-6 h-px w-11 bg-[#b08d57]" />
+
+              <div className="mt-8 flex items-center gap-4">
+
+                <span className="text-[17px] tracking-[0.12em] text-[#b08d57]">
+                  ★★★★★
+                </span>
+
+                <span className="text-xs text-[#777169]">
+                  Google Reviews
+                </span>
+
+              </div>
+
+              <p className="mt-6 max-w-xl text-sm leading-7 text-[#777169] sm:text-base">
+                See genuine customer experiences, ratings and reviews for our Diamond Jewellery store on Google.
+              </p>
+
+              <a
+                href="https://maps.app.goo.gl/gTx3QsENQTaaYNgS6"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-9 inline-flex min-h-12.5 items-center justify-center border border-[#b08d57] px-8 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#1c1a17] transition hover:bg-[#b08d57] hover:text-white sm:text-xs"
+              >
+                Read Diamond Reviews
+
+                <span className="ml-4 text-base">
+                  →
+                </span>
+              </a>
+
+            </div>
 
           </div>
 
         </div>
+
       </section>
 
       {/* =================================================
@@ -423,9 +661,7 @@ export default async function HomePage() {
 
       <section className="bg-[#f1ece3]">
 
-        <div className="mx-auto max-w-[1400px] px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
-
-          {/* Heading */}
+        <div className="mx-auto max-w-350 px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
 
           <div className="mx-auto mb-12 max-w-2xl text-center">
 
@@ -445,8 +681,13 @@ export default async function HomePage() {
             </p>
 
           </div>
+\
 
-          {/* Stores */}
+
+
+
+
+
 
           <div className="grid gap-5 md:grid-cols-2">
 
@@ -462,13 +703,13 @@ export default async function HomePage() {
 
           </div>
 
-          {/* Contact */}
+
 
           <div className="mt-10 text-center">
 
             <Link
               href="/contact"
-              className="inline-flex min-h-[50px] items-center justify-center bg-[#b08d57] px-8 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition-all duration-300 hover:bg-[#8f6f3f] sm:text-xs"
+              className="inline-flex min-h-12.5 items-center justify-center bg-[#b08d57] px-8 text-[10px] font-semibold uppercase tracking-[0.2em] text-white transition-all duration-300 hover:bg-[#8f6f3f] sm:text-xs"
             >
               Contact Us
             </Link>
@@ -476,6 +717,7 @@ export default async function HomePage() {
           </div>
 
         </div>
+
       </section>
 
     </main>
@@ -493,6 +735,7 @@ function StoreCard({
   collection: "Gold" | "Diamond";
   store: Store | undefined;
 }) {
+
   const fallbackName =
     collection === "Gold"
       ? "Gold Jewellery Store"
@@ -509,13 +752,15 @@ function StoreCard({
   const whatsappMessage =
     `Hello, I would like to know more about your ${collection} Jewellery Collection.`;
 
-  const whatsappUrlWithMessage = whatsappUrl
-    ? `${whatsappUrl}?text=${encodeURIComponent(
-        whatsappMessage
-      )}`
-    : "";
+  const whatsappUrlWithMessage =
+    whatsappUrl
+      ? `${whatsappUrl}?text=${encodeURIComponent(
+          whatsappMessage
+        )}`
+      : "";
 
   return (
+
     <div className="group border border-[#e5ded2] bg-[#f8f5ef] p-7 transition-all duration-500 hover:border-[#b08d57] sm:p-9 lg:p-10">
 
       {/* =================================================
@@ -524,27 +769,30 @@ function StoreCard({
 
       <div className="flex items-center gap-5">
 
-        {/* Store Logo */}
-
         <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#b08d57]/30 bg-[#f1ece3] p-3 sm:h-24 sm:w-24">
 
           {store?.logo ? (
-            <img
+
+            <Image
               src={store.logo}
               alt={`${store.name || collection} logo`}
+              width={96}
+              height={96}
+              unoptimized
               className="h-full w-full object-contain"
             />
+
           ) : (
+
             <span className="font-display text-2xl text-[#b08d57]">
               {collection === "Gold"
                 ? "G"
                 : "D"}
             </span>
+
           )}
 
         </div>
-
-        {/* Store heading */}
 
         <div className="min-w-0">
 
@@ -553,30 +801,25 @@ function StoreCard({
           </p>
 
           <h3 className="mt-2 font-display text-2xl font-normal leading-tight text-[#1c1a17] sm:text-3xl">
-            {store?.name || fallbackName}
+            {store?.name ||
+              fallbackName}
           </h3>
 
         </div>
 
       </div>
 
-      {/* Divider */}
-
       <div className="mt-6 h-px w-10 bg-[#b08d57]" />
 
-      {/* Description */}
-
       {store?.description && (
+
         <p className="mt-5 max-w-xl text-sm leading-7 text-[#777169] sm:text-base">
           {store.description}
         </p>
+
       )}
 
-      {/* Store information */}
-
       <div className="mt-7 space-y-6">
-
-        {/* Address */}
 
         <div>
 
@@ -591,8 +834,6 @@ function StoreCard({
 
         </div>
 
-        {/* Phone */}
-
         <div>
 
           <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#9b9389]">
@@ -600,55 +841,55 @@ function StoreCard({
           </p>
 
           {store?.phone ? (
+
             <a
               href={`tel:${store.phone}`}
               className="mt-2 inline-block text-sm text-[#4d4943] transition-colors hover:text-[#b08d57] sm:text-base"
             >
               {store.phone}
             </a>
+
           ) : (
+
             <p className="mt-2 text-sm text-[#918a81]">
               Phone number coming soon
             </p>
+
           )}
 
         </div>
 
       </div>
 
-      {/* Store actions */}
-
       <div className="mt-8 flex flex-col gap-3 sm:flex-row">
 
-        {/* WhatsApp */}
-
         {whatsappUrlWithMessage && (
+
           <a
             href={whatsappUrlWithMessage}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex min-h-[48px] flex-1 items-center justify-center bg-[#b08d57] px-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition-colors hover:bg-[#8f6f3f] sm:text-xs"
+            className="flex min-h-12 flex-1 items-center justify-center bg-[#b08d57] px-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition-colors hover:bg-[#8f6f3f] sm:text-xs"
           >
             WhatsApp
           </a>
+
         )}
 
-        {/* Google Maps */}
-
         {store?.googleMapsUrl && (
+
           <a
             href={store.googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex min-h-[48px] flex-1 items-center justify-center border border-[#b08d57] px-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1a17] transition-colors hover:bg-[#b08d57] hover:text-white sm:text-xs"
+            className="flex min-h-12 flex-1 items-center justify-center border border-[#b08d57] px-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1a17] transition-colors hover:bg-[#b08d57] hover:text-white sm:text-xs"
           >
             View Location
           </a>
+
         )}
 
       </div>
-
-      {/* Collection link */}
 
       <Link
         href={
@@ -656,13 +897,14 @@ function StoreCard({
             ? "/gold"
             : "/diamond"
         }
-        className="mt-3 flex min-h-[48px] items-center justify-center border border-[#e5ded2] px-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#4d4943] transition-colors hover:border-[#b08d57] hover:text-[#b08d57] sm:text-xs"
+        className="mt-3 flex min-h-12 items-center justify-center border border-[#e5ded2] px-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#4d4943] transition-colors hover:border-[#b08d57] hover:text-[#b08d57] sm:text-xs"
       >
         View {collection} Collection
 
         <span className="ml-2">
           →
         </span>
+
       </Link>
 
     </div>

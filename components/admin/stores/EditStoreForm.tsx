@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import type { Store } from "@/services/store.service";
@@ -43,10 +43,19 @@ export default function EditStoreForm({ store }: Props) {
   const [logoPreview, setLogoPreview] = useState(
     store.logo || ""
   );
+  const logoPreviewUrl = useRef("");
 
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    return () => {
+      if (logoPreviewUrl.current) {
+        URL.revokeObjectURL(logoPreviewUrl.current);
+      }
+    };
+  }, []);
 
   function updateField(
     field: keyof StoreFormData,
@@ -80,7 +89,13 @@ export default function EditStoreForm({ store }: Props) {
     setError("");
     setLogoFile(file);
 
+    if (logoPreviewUrl.current) {
+      URL.revokeObjectURL(logoPreviewUrl.current);
+    }
+
     const previewUrl = URL.createObjectURL(file);
+
+    logoPreviewUrl.current = previewUrl;
     setLogoPreview(previewUrl);
   }
 
@@ -184,6 +199,7 @@ export default function EditStoreForm({ store }: Props) {
       className="space-y-6"
     >
       {/* Collection */}
+
       <section className="rounded-2xl border border-[#D8C9B5] bg-[#FAF6EE] p-6 shadow-[0_4px_18px_rgba(80,60,30,0.04)]">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A47C3A]">
           Collection
@@ -207,6 +223,7 @@ export default function EditStoreForm({ store }: Props) {
       </section>
 
       {/* Store Logo */}
+
       <section className="rounded-2xl border border-[#D8C9B5] bg-[#FAF6EE] p-6 shadow-[0_4px_18px_rgba(80,60,30,0.04)]">
         <h2 className="text-xl font-semibold text-[#302A23]">
           Store Logo
@@ -219,6 +236,8 @@ export default function EditStoreForm({ store }: Props) {
         <div className="mt-6 grid gap-6 md:grid-cols-[180px_1fr] md:items-start">
           <div className="flex h-44 w-full items-center justify-center rounded-2xl border border-[#D8C9B5] bg-[#F3EDE2] p-4">
             {logoPreview ? (
+              /* Blob URLs are used while a local upload is pending. */
+              /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={logoPreview}
                 alt={`${store.name} logo`}
@@ -267,6 +286,7 @@ export default function EditStoreForm({ store }: Props) {
       </section>
 
       {/* Basic Information */}
+
       <section className="rounded-2xl border border-[#D8C9B5] bg-[#FAF6EE] p-6 shadow-[0_4px_18px_rgba(80,60,30,0.04)]">
         <h2 className="text-xl font-semibold text-[#302A23]">
           Basic Information
@@ -350,6 +370,7 @@ export default function EditStoreForm({ store }: Props) {
       </section>
 
       {/* Contact Information */}
+
       <section className="rounded-2xl border border-[#D8C9B5] bg-[#FAF6EE] p-6 shadow-[0_4px_18px_rgba(80,60,30,0.04)]">
         <h2 className="text-xl font-semibold text-[#302A23]">
           Contact Information
@@ -360,7 +381,9 @@ export default function EditStoreForm({ store }: Props) {
         </p>
 
         <div className="mt-6 grid gap-5 md:grid-cols-2">
+
           {/* Phone */}
+
           <div>
             <label
               htmlFor="phone"
@@ -385,6 +408,7 @@ export default function EditStoreForm({ store }: Props) {
           </div>
 
           {/* WhatsApp Number */}
+
           <div>
             <label
               htmlFor="whatsapp"
@@ -413,6 +437,7 @@ export default function EditStoreForm({ store }: Props) {
           </div>
 
           {/* WhatsApp URL */}
+
           <div className="md:col-span-2">
             <label
               htmlFor="whatsappUrl"
@@ -443,6 +468,7 @@ export default function EditStoreForm({ store }: Props) {
       </section>
 
       {/* Google Maps */}
+
       <section className="rounded-2xl border border-[#D8C9B5] bg-[#FAF6EE] p-6 shadow-[0_4px_18px_rgba(80,60,30,0.04)]">
         <h2 className="text-xl font-semibold text-[#302A23]">
           Google Maps
@@ -477,6 +503,7 @@ export default function EditStoreForm({ store }: Props) {
       </section>
 
       {/* Status */}
+
       <section className="rounded-2xl border border-[#D8C9B5] bg-[#FAF6EE] p-6 shadow-[0_4px_18px_rgba(80,60,30,0.04)]">
         <div className="flex items-center justify-between gap-6">
           <div>
@@ -510,6 +537,7 @@ export default function EditStoreForm({ store }: Props) {
       </section>
 
       {/* Messages */}
+
       {error && (
         <div
           role="alert"
@@ -529,6 +557,7 @@ export default function EditStoreForm({ store }: Props) {
       )}
 
       {/* Actions */}
+
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
         <button
           type="button"

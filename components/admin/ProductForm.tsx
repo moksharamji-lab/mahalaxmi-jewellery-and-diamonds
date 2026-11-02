@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 
 import type { Category } from "@/types/category";
@@ -17,18 +18,10 @@ type ProductFormState = {
   slug: string;
   collection: string;
   category: string;
-  brand: string;
   purity: string;
+  tagNumber: string;
   weight: string;
-  makingCharges: string;
   description: string;
-
-  hyd: string;
-  hallmark: string;
-
-  igi: string;
-  sgl: string;
-
   featured: boolean;
   active: boolean;
 };
@@ -37,43 +30,21 @@ export default function ProductForm({
   initialData,
   categories,
 }: Props) {
-  const [form, setForm] =
-    useState<ProductFormState>({
-      name: initialData?.name ?? "",
-      slug: initialData?.slug ?? "",
-      collection:
-        initialData?.collection ?? "Gold",
-      category:
-        initialData?.category ?? "",
-      brand:
-        initialData?.brand ?? "",
-      purity:
-        initialData?.purity ?? "",
-      weight:
-        initialData?.weight?.toString() ?? "",
-      makingCharges:
-        initialData?.makingCharges?.toString() ?? "",
-      description:
-        initialData?.description ?? "",
+  const [form, setForm] = useState<ProductFormState>({
+    name: initialData?.name ?? "",
+    slug: initialData?.slug ?? "",
+    collection: initialData?.collection ?? "Gold",
+    category: initialData?.category ?? "",
+    purity: initialData?.purity ?? "",
+    tagNumber: initialData?.tagNumber ?? "",
+    weight: initialData?.weight?.toString() ?? "",
+    description: initialData?.description ?? "",
+    featured: initialData?.featured ?? false,
+    active: initialData?.active ?? true,
+  });
 
-      hyd: initialData?.hyd ?? "",
-      hallmark: initialData?.hallmark ?? "",
-
-      igi: initialData?.igi ?? "",
-      sgl: initialData?.sgl ?? "",
-
-      featured:
-        initialData?.featured ?? false,
-
-      active:
-        initialData?.active ?? true,
-    });
-
-  const [images, setImages] =
-    useState<File[]>([]);
-
-  const [video, setVideo] =
-    useState<File | null>(null);
+  const [images, setImages] = useState<File[]>([]);
+  const [video, setVideo] = useState<File | null>(null);
 
   async function handleSubmit(
     e: React.FormEvent<HTMLFormElement>
@@ -86,27 +57,11 @@ export default function ProductForm({
       formData.append("name", form.name);
       formData.append("slug", form.slug);
       formData.append("collection", form.collection);
-      formData.append("category", form.category);
-      formData.append("brand", form.brand);
+      formData.append("categoryId", form.category);
       formData.append("purity", form.purity);
+      formData.append("tagNumber", form.tagNumber);
       formData.append("weight", form.weight);
-      formData.append(
-        "makingCharges",
-        form.makingCharges
-      );
-      formData.append(
-        "description",
-        form.description
-      );
-
-      formData.append("hyd", form.hyd);
-      formData.append(
-        "hallmark",
-        form.hallmark
-      );
-
-      formData.append("igi", form.igi);
-      formData.append("sgl", form.sgl);
+      formData.append("description", form.description);
 
       formData.append(
         "featured",
@@ -133,9 +88,7 @@ export default function ProductForm({
           formData
         );
 
-        alert(
-          "✅ Product Updated Successfully!"
-        );
+        alert("✅ Product Updated Successfully!");
       } else {
         await sendAdminMutation(
           "products",
@@ -143,31 +96,24 @@ export default function ProductForm({
           formData
         );
 
-        alert(
-          "✅ Product Added Successfully!"
-        );
+        alert("✅ Product Added Successfully!");
+
+        setForm({
+          name: "",
+          slug: "",
+          collection: "Gold",
+          category: "",
+          purity: "",
+          tagNumber: "",
+          weight: "",
+          description: "",
+          featured: false,
+          active: true,
+        });
+
+        setImages([]);
+        setVideo(null);
       }
-
-      setForm({
-        name: "",
-        slug: "",
-        collection: "Gold",
-        category: "",
-        brand: "",
-        purity: "",
-        weight: "",
-        makingCharges: "",
-        description: "",
-        hyd: "",
-        hallmark: "",
-        igi: "",
-        sgl: "",
-        featured: false,
-        active: true,
-      });
-
-      setImages([]);
-      setVideo(null);
     } catch (error: unknown) {
       if (error instanceof Error) {
         alert(error.message);
@@ -182,7 +128,9 @@ export default function ProductForm({
       onSubmit={handleSubmit}
       className="space-y-8 rounded-2xl border border-[#D8C9B5] bg-[#FAF6EE] p-6 shadow-[0_4px_18px_rgba(80,60,30,0.04)] md:p-8"
     >
-      {/* BASIC INFORMATION */}
+      {/* =====================================================
+          BASIC INFORMATION
+      ===================================================== */}
 
       <div>
         <div className="mb-6">
@@ -202,7 +150,7 @@ export default function ProductForm({
 
         <div className="grid gap-6 md:grid-cols-2">
 
-          {/* Product Name */}
+          {/* PRODUCT NAME */}
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-[#40382F]">
@@ -224,7 +172,7 @@ export default function ProductForm({
             />
           </div>
 
-          {/* Slug */}
+          {/* SLUG */}
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-[#40382F]">
@@ -245,7 +193,7 @@ export default function ProductForm({
             />
           </div>
 
-          {/* Collection */}
+          {/* COLLECTION */}
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-[#40382F]">
@@ -294,12 +242,13 @@ export default function ProductForm({
                 Select Category
               </option>
 
-              {categories
-                .filter(
-                  (category) =>
-                    category.active
-                )
-                .map((category) => (
+             {categories
+  .filter(
+    (category) =>
+      category.active &&
+      category.collection === form.collection
+  )
+  .map((category) => (
                   <option
                     key={category.id}
                     value={category.id}
@@ -310,7 +259,7 @@ export default function ProductForm({
             </select>
           </div>
 
-          {/* Purity */}
+          {/* PURITY */}
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-[#40382F]">
@@ -331,95 +280,28 @@ export default function ProductForm({
             />
           </div>
 
-          {/* Gold */}
+          {/* TAG NUMBER */}
 
-          {form.collection === "Gold" && (
-            <>
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-[#40382F]">
-                  HYD
-                </label>
+          <div>
+            <label className="mb-2 block text-sm font-semibold text-[#40382F]">
+              Tag Number
+            </label>
 
-                <input
-                  type="text"
-                  value={form.hyd}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      hyd: e.target.value,
-                    })
-                  }
-                  placeholder="Enter HYD"
-                  className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
-                />
-              </div>
+            <input
+              type="text"
+              value={form.tagNumber}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  tagNumber: e.target.value,
+                })
+              }
+              placeholder="Enter tag number"
+              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
+            />
+          </div>
 
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-[#40382F]">
-                  Hallmark
-                </label>
-
-                <input
-                  type="text"
-                  value={form.hallmark}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      hallmark: e.target.value,
-                    })
-                  }
-                  placeholder="Enter Hallmark"
-                  className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
-                />
-              </div>
-            </>
-          )}
-
-          {/* Diamond */}
-
-          {form.collection === "Diamond" && (
-            <>
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-[#40382F]">
-                  IGI
-                </label>
-
-                <input
-                  type="text"
-                  value={form.igi}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      igi: e.target.value,
-                    })
-                  }
-                  placeholder="Enter IGI"
-                  className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-[#40382F]">
-                  SGL
-                </label>
-
-                <input
-                  type="text"
-                  value={form.sgl}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      sgl: e.target.value,
-                    })
-                  }
-                  placeholder="Enter SGL"
-                  className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
-                />
-              </div>
-            </>
-          )}
-
-          {/* Weight */}
+          {/* WEIGHT */}
 
           <div>
             <label className="mb-2 block text-sm font-semibold text-[#40382F]">
@@ -439,38 +321,20 @@ export default function ProductForm({
               placeholder="0.00"
               className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
             />
+
+            <p className="mt-2 text-xs text-[#817668]">
+              Kept for future use. It is currently
+              hidden from the public website.
+            </p>
           </div>
-
-          {/* Making Charges */}
-
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-[#40382F]">
-              Making Charges
-            </label>
-
-            <input
-              type="number"
-              step="0.01"
-              value={form.makingCharges}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  makingCharges:
-                    e.target.value,
-                })
-              }
-              placeholder="0.00"
-              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
-            />
-          </div>
-
         </div>
       </div>
 
-      {/* DESCRIPTION */}
+      {/* =====================================================
+          DESCRIPTION
+      ===================================================== */}
 
       <div className="border-t border-[#E3D7C5] pt-8">
-
         <div className="mb-5">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A47C3A]">
             Product Details
@@ -487,20 +351,19 @@ export default function ProductForm({
           onChange={(e) =>
             setForm({
               ...form,
-              description:
-                e.target.value,
+              description: e.target.value,
             })
           }
           className="w-full resize-none rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23]"
           placeholder="Enter product description"
         />
-
       </div>
 
-      {/* PRODUCT IMAGES */}
+      {/* =====================================================
+          PRODUCT IMAGES
+      ===================================================== */}
 
       <div className="border-t border-[#E3D7C5] pt-8">
-
         <div className="mb-5">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A47C3A]">
             Media
@@ -518,13 +381,11 @@ export default function ProductForm({
         {initialData &&
           initialData.imageUrls?.length > 0 && (
             <div className="mb-6">
-
               <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#817668]">
                 Existing Images
               </p>
 
               <div className="flex flex-wrap gap-4">
-
                 {initialData.imageUrls.map(
                   (imageUrl, index) => (
                     <div
@@ -532,11 +393,12 @@ export default function ProductForm({
                       className="overflow-hidden rounded-xl border border-[#D8C9B5] bg-[#F8F2E8]"
                     >
                       {imageUrl ? (
-                        <img
+                        <Image
                           src={imageUrl}
-                          alt={`Product ${
-                            index + 1
-                          }`}
+                          alt={`Product ${index + 1}`}
+                          width={96}
+                          height={96}
+                          unoptimized
                           className="h-24 w-24 object-cover"
                         />
                       ) : (
@@ -547,9 +409,7 @@ export default function ProductForm({
                     </div>
                   )
                 )}
-
               </div>
-
             </div>
           )}
 
@@ -560,9 +420,7 @@ export default function ProductForm({
           onChange={(e) => {
             if (e.target.files) {
               setImages(
-                Array.from(
-                  e.target.files
-                )
+                Array.from(e.target.files)
               );
             }
           }}
@@ -575,43 +433,35 @@ export default function ProductForm({
 
         {images.length > 0 && (
           <div className="mt-5">
-
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#817668]">
               New Images
             </p>
 
             <div className="flex flex-wrap gap-4">
-
-              {images.map(
-                (image, index) => (
-                  <div
-                    key={`${image.name}-${index}`}
-                    className="overflow-hidden rounded-xl border border-[#D8C9B5] bg-[#F8F2E8]"
-                  >
-                    <img
-                      src={URL.createObjectURL(
-                        image
-                      )}
-                      alt={`Preview ${
-                        index + 1
-                      }`}
-                      className="h-24 w-24 object-cover"
-                    />
-                  </div>
-                )
-              )}
-
+              {images.map((image, index) => (
+                <div
+                  key={`${image.name}-${index}`}
+                  className="overflow-hidden rounded-xl border border-[#D8C9B5] bg-[#F8F2E8]"
+                >
+                  {/* Blob URLs are used while a local upload is pending. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={URL.createObjectURL(image)}
+                    alt={`Preview ${index + 1}`}
+                    className="h-24 w-24 object-cover"
+                  />
+                </div>
+              ))}
             </div>
-
           </div>
         )}
-
       </div>
 
-      {/* PRODUCT VIDEO */}
+      {/* =====================================================
+          PRODUCT VIDEO
+      ===================================================== */}
 
       <div className="border-t border-[#E3D7C5] pt-8">
-
         <div className="mb-5">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#A47C3A]">
             Media
@@ -627,35 +477,29 @@ export default function ProductForm({
           </p>
         </div>
 
-        {initialData?.video &&
-          !video && (
-            <div className="mb-6">
+        {initialData?.video && !video && (
+          <div className="mb-6">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#817668]">
+              Existing Video
+            </p>
 
-              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#817668]">
-                Existing Video
-              </p>
-
-              <div className="max-w-md overflow-hidden rounded-2xl border border-[#D8C9B5] bg-[#EDE3D3]">
-
-                <video
-                  src={initialData.video}
-                  controls
-                  playsInline
-                  className="aspect-video w-full object-contain"
-                />
-
-              </div>
-
+            <div className="max-w-md overflow-hidden rounded-2xl border border-[#D8C9B5] bg-[#EDE3D3]">
+              <video
+                src={initialData.video}
+                controls
+                playsInline
+                className="aspect-video w-full object-contain"
+              />
             </div>
-          )}
+          </div>
+        )}
 
         <input
           type="file"
           accept="video/mp4,video/webm,video/quicktime"
           onChange={(e) => {
             const selectedFile =
-              e.target.files?.[0] ??
-              null;
+              e.target.files?.[0] ?? null;
 
             setVideo(selectedFile);
           }}
@@ -664,7 +508,6 @@ export default function ProductForm({
 
         {video && (
           <div className="mt-4 rounded-xl border border-[#D8C9B5] bg-[#F8F2E8] p-4">
-
             <p className="text-sm font-semibold text-[#302A23]">
               Selected Video
             </p>
@@ -674,57 +517,45 @@ export default function ProductForm({
             </p>
 
             <p className="mt-1 text-xs text-[#817668]">
-              {(
-                video.size /
-                (1024 * 1024)
-              ).toFixed(2)}{" "}
+              {(video.size / (1024 * 1024)).toFixed(2)}{" "}
               MB
             </p>
-
           </div>
         )}
 
         {video && (
           <div className="mt-5">
-
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#817668]">
               Video Preview
             </p>
 
             <div className="max-w-md overflow-hidden rounded-2xl border border-[#D8C9B5] bg-[#EDE3D3]">
-
               <video
-                src={URL.createObjectURL(
-                  video
-                )}
+                src={URL.createObjectURL(video)}
                 controls
                 playsInline
                 className="aspect-video w-full object-contain"
               />
-
             </div>
-
           </div>
         )}
-
       </div>
 
-      {/* STATUS */}
+      {/* =====================================================
+          STATUS
+      ===================================================== */}
 
       <div className="border-t border-[#E3D7C5] pt-8">
-
         <div className="grid gap-4 sm:grid-cols-2">
 
           <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#D8C9B5] bg-[#F8F2E8] p-4 text-[#302A23]">
-
             <input
               type="checkbox"
               checked={form.featured}
               onChange={(e) =>
                 setForm({
                   ...form,
-                  featured:
-                    e.target.checked,
+                  featured: e.target.checked,
                 })
               }
               className="h-4 w-4 accent-[#B08D57]"
@@ -739,19 +570,16 @@ export default function ProductForm({
                 Show this product as featured.
               </p>
             </div>
-
           </label>
 
           <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#D8C9B5] bg-[#F8F2E8] p-4 text-[#302A23]">
-
             <input
               type="checkbox"
               checked={form.active}
               onChange={(e) =>
                 setForm({
                   ...form,
-                  active:
-                    e.target.checked,
+                  active: e.target.checked,
                 })
               }
               className="h-4 w-4 accent-[#B08D57]"
@@ -766,28 +594,25 @@ export default function ProductForm({
                 Make this product visible.
               </p>
             </div>
-
           </label>
 
         </div>
-
       </div>
 
-      {/* SUBMIT */}
+      {/* =====================================================
+          SUBMIT
+      ===================================================== */}
 
       <div className="border-t border-[#E3D7C5] pt-8">
-
         <button
           type="submit"
-          className="w-full rounded-xl border border-[#B08D57] bg-[#B08D57] px-8 py-3.5 font-semibold text-[#FFF9EF] text-[#FFF9EF] sm:w-auto"
+          className="w-full rounded-xl border border-[#B08D57] bg-[#B08D57] px-8 py-3.5 font-semibold text-[#FFF9EF] transition hover:bg-[#96733F] sm:w-auto"
         >
           {initialData
             ? "Update Product"
             : "Save Product"}
         </button>
-
       </div>
-
     </form>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import { HeroSlide } from "@/types/hero-slide";
 import { sendAdminMutation } from "@/lib/admin-api";
 
@@ -13,11 +14,6 @@ const PAGE_OPTIONS = [
   "Gold",
   "Diamonds",
   "Categories",
-] as const;
-
-const MEDIA_TYPE_OPTIONS = [
-  "image",
-  "video",
 ] as const;
 
 export default function HeroForm({ initialData }: Props) {
@@ -34,6 +30,38 @@ export default function HeroForm({ initialData }: Props) {
 
   const [image, setImage] = useState<File | null>(null);
   const [video, setVideo] = useState<File | null>(null);
+  const imagePreviewUrl = useRef("");
+  const [imagePreview, setImagePreview] = useState("");
+
+  useEffect(() => {
+    return () => {
+      if (imagePreviewUrl.current) {
+        URL.revokeObjectURL(imagePreviewUrl.current);
+      }
+    };
+  }, []);
+
+  function handleImageChange(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const nextImage = event.target.files?.[0] ?? null;
+
+    if (imagePreviewUrl.current) {
+      URL.revokeObjectURL(imagePreviewUrl.current);
+      imagePreviewUrl.current = "";
+    }
+
+    setImage(nextImage);
+
+    if (nextImage) {
+      const previewUrl = URL.createObjectURL(nextImage);
+
+      imagePreviewUrl.current = previewUrl;
+      setImagePreview(previewUrl);
+    } else {
+      setImagePreview("");
+    }
+  }
 
   async function handleSubmit(
     e: React.FormEvent<HTMLFormElement>
@@ -98,6 +126,7 @@ export default function HeroForm({ initialData }: Props) {
 
         setImage(null);
         setVideo(null);
+        setImagePreview("");
       }
     } catch (error) {
       console.error("Hero slide save error:", error);
@@ -174,7 +203,7 @@ export default function HeroForm({ initialData }: Props) {
             setForm({
               ...form,
               mediaType:
-                e.target.value as (typeof MEDIA_TYPE_OPTIONS)[number],
+                e.target.value as "image" | "video",
             })
           }
           className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-sm text-[#302A23] outline-none transition focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
@@ -325,9 +354,12 @@ export default function HeroForm({ initialData }: Props) {
           </label>
 
           <div className="overflow-hidden rounded-xl border border-[#D8C9B5] bg-[#F8F2E8] p-2">
-            <img
+            <Image
               src={initialData.imageUrl}
               alt={initialData.title}
+              width={1200}
+              height={640}
+              unoptimized
               className="h-48 w-full rounded-lg object-cover sm:h-64"
             />
           </div>
@@ -352,11 +384,7 @@ export default function HeroForm({ initialData }: Props) {
             id="hero-image"
             type="file"
             accept="image/*"
-            onChange={(e) => {
-              if (e.target.files?.[0]) {
-                setImage(e.target.files[0]);
-              }
-            }}
+            onChange={handleImageChange}
             className="block w-full cursor-pointer text-sm text-[#6F665B] file:mr-4 file:rounded-lg file:border-0 file:bg-[#EDE3D3] file:px-4 file:py-2 file:text-sm file:font-semibold file:text-[#554C42] hover:file:bg-[#E3D7C5]"
           />
         </div>
@@ -369,15 +397,17 @@ export default function HeroForm({ initialData }: Props) {
       </div>
 
       {/* New Image Preview */}
-      {image && (
+      {image && imagePreview && (
         <div>
           <label className="mb-2 block text-sm font-semibold text-[#40382F]">
             New Image Preview
           </label>
 
           <div className="overflow-hidden rounded-xl border border-[#D8C9B5] bg-[#F8F2E8] p-2">
+            {/* Blob URLs are used while a local upload is pending. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={URL.createObjectURL(image)}
+              src={imagePreview}
               alt="New hero slide preview"
               className="h-48 w-full rounded-lg object-cover sm:h-64"
             />

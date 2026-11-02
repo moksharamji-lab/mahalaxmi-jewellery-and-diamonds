@@ -5,42 +5,35 @@ export interface Product {
   slug: string;
 
   collection: string;
-  category: string;
-  brand: string;
-
-  categoryName: string;
-  brandName: string;
   collectionId: string;
 
-  // Product details
+  category: string;
+  categoryName: string;
+
   purity: string;
+  tagNumber: string;
+
   description: string;
 
-  // Gold product details
-  hyd: string;
-  hallmark: string;
-
-  // Diamond product details
-  igi: string;
-  sgl: string;
-
-  // Existing product fields
+  /*
+   * Weight is intentionally kept in the product model.
+   * The client may want to display it in the future.
+   * For now it will NOT be shown on the public website.
+   */
   weight: number;
-  makingCharges: number;
 
   featured: boolean;
   active: boolean;
 
-  // Legacy-compatible media fields
+  /*
+   * Google Drive / media fields
+   */
   images: string[];
+  driveImages: string[];
   imageUrls: string[];
   imageUrl: string;
 
-  // Google Drive media
-  driveImages: string[];
   driveVideo: string;
-
-  // Final video URL
   video: string;
 
   created: string;

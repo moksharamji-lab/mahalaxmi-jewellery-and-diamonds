@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getStores } from "@/services/store.service";
 
@@ -52,9 +53,12 @@ export default async function ContactPage() {
               <div className="flex justify-center">
                 <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border border-[#c8a96b]/40 bg-[#eee8dc] p-5 shadow-[0_8px_25px_rgba(80,60,30,0.06)]">
                   {store.logo ? (
-                    <img
+                    <Image
                       src={store.logo}
                       alt={`${store.name} logo`}
+                      width={128}
+                      height={128}
+                      unoptimized
                       className="h-full w-full object-contain"
                     />
                   ) : (
@@ -91,7 +95,7 @@ export default async function ContactPage() {
 
               {/* Gold Divider */}
 
-              <div className="my-7 h-px bg-gradient-to-r from-transparent via-[#c8a96b] to-transparent" />
+              <div className="my-7 h-px bg-linear-to-r from-transparent via-[#c8a96b] to-transparent" />
 
               {/* =========================
                   STORE DETAILS

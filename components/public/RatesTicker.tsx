@@ -25,51 +25,61 @@ export default async function RatesTicker() {
 
   const tickerGroup = (
     <div className="flex shrink-0 items-center whitespace-nowrap">
-      <span className="font-sans text-[10px] font-semibold text-white sm:text-[11px]">
+      {/* TODAY'S GOLD RATE */}
+
+      <span className="font-sans text-[13px] font-extrabold uppercase tracking-[0.04em] text-[#fffdf7] sm:text-[14px]">
         Today&apos;s Gold Rate
       </span>
 
-      <span className="mx-2 text-[10px] text-white/80 sm:mx-3">
+      <span className="mx-3 text-[13px] font-bold text-[#f7f2e8]/80 sm:mx-4 sm:text-[14px]">
         |
       </span>
 
-      <span className="font-sans text-[10px] font-medium text-white sm:text-[11px]">
+      {/* 24K */}
+
+      <span className="font-sans text-[13px] font-extrabold text-[#fffdf7] sm:text-[14px]">
         24K - {getRate("24K")}
       </span>
 
-      <span className="mx-2 text-[10px] text-white/80 sm:mx-3">
+      <span className="mx-3 text-[13px] font-bold text-[#f7f2e8]/80 sm:mx-4 sm:text-[14px]">
         |
       </span>
 
-      <span className="font-sans text-[10px] font-medium text-white sm:text-[11px]">
+      {/* 22K */}
+
+      <span className="font-sans text-[13px] font-extrabold text-[#fffdf7] sm:text-[14px]">
         22K - {getRate("22K")}
       </span>
 
-      <span className="mx-2 text-[10px] text-white/80 sm:mx-3">
+      <span className="mx-3 text-[13px] font-bold text-[#f7f2e8]/80 sm:mx-4 sm:text-[14px]">
         |
       </span>
 
-      <span className="font-sans text-[10px] font-medium text-white sm:text-[11px]">
+      {/* 18K */}
+
+      <span className="font-sans text-[13px] font-extrabold text-[#fffdf7] sm:text-[14px]">
         18K - {getRate("18K")}
       </span>
 
-      <span className="mx-2 text-[10px] text-white/80 sm:mx-3">
+      <span className="mx-3 text-[13px] font-bold text-[#f7f2e8]/80 sm:mx-4 sm:text-[14px]">
         |
       </span>
 
-      <span className="font-sans text-[10px] font-medium text-white sm:text-[11px]">
+      {/* 14K */}
+
+      <span className="font-sans text-[13px] font-extrabold text-[#fffdf7] sm:text-[14px]">
         14K - {getRate("14K")}
       </span>
 
-      <span className="mx-5 text-[10px] text-white/70 sm:mx-6">
+      <span className="mx-5 text-[13px] font-bold text-[#f7f2e8]/80 sm:mx-7 sm:text-[14px]">
         |
       </span>
     </div>
   );
 
   return (
-    <div className="relative z-40 overflow-hidden border-b border-[#9f7d25] bg-[#D4AF37]">
-      <div className="flex h-10 items-center overflow-hidden sm:h-11">
+    <div className="relative z-40 overflow-hidden border-b border-[#8f7335] bg-[#b9933f]">
+      <div className="flex h-11 items-center overflow-hidden sm:h-12">
         <div
           className="rates-ticker flex min-w-max items-center"
           style={{

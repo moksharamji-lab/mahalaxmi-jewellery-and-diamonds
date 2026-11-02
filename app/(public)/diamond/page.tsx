@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import {
@@ -17,47 +18,61 @@ import {
   type Store,
 } from "@/services/store.service";
 
-import {
-  getHeroSlides,
-} from "@/services/hero-slide.service";
 
-import type {
-  HeroSlide,
-} from "@/types/hero-slide";
-
-import HeroSlider from "@/components/public/HeroSlider";
 
 type Props = {
   searchParams: Promise<{
+    q?: string;
     category?: string;
+    purity?: string;
+    featured?: string;
   }>;
 };
 
 export default async function DiamondPage({
   searchParams,
 }: Props) {
-  const { category } =
-    await searchParams;
+  const params = await searchParams;
+
+  const search =
+    typeof params.q === "string"
+      ? params.q.trim()
+      : "";
+
+  const category =
+    typeof params.category === "string"
+      ? params.category
+      : "";
+
+  const purity =
+    typeof params.purity === "string"
+      ? params.purity
+      : "";
+
+  const featured =
+    params.featured === "true";
 
   let products: Product[] = [];
   let categories: Category[] = [];
   let store: Store | null = null;
-  let heroSlides: HeroSlide[] = [];
 
-  /* =====================================================
-     LOAD DIAMOND PRODUCTS
-  ===================================================== */
+
+  /*
+   * =====================================================
+   * LOAD DIAMOND PRODUCTS
+   * =====================================================
+   */
 
   try {
     const filters: ProductFilters = {
       collection: "Diamond",
       active: true,
-      category:
-        category || undefined,
+      search: search || undefined,
+      category: category || undefined,
+      featured: featured || undefined,
     };
 
-    products =
-      await getProducts(filters);
+    products = await getProducts(filters);
   } catch (error) {
     console.error(
       "Failed to load Diamond products:",
@@ -65,23 +80,26 @@ export default async function DiamondPage({
     );
   }
 
-  /* =====================================================
-     LOAD CATEGORIES
-  ===================================================== */
+  /*
+   * =====================================================
+   * LOAD CATEGORIES
+   * =====================================================
+   */
 
   try {
-    categories =
-      await getCategories();
+    categories = await getCategories();
   } catch (error) {
     console.error(
-      "Failed to load categories:",
+      "Failed to load Diamond categories:",
       error
     );
   }
 
-  /* =====================================================
-     LOAD DIAMOND STORE
-  ===================================================== */
+  /*
+   * =====================================================
+   * LOAD DIAMOND STORE
+   * =====================================================
+   */
 
   try {
     store =
@@ -95,171 +113,201 @@ export default async function DiamondPage({
     );
   }
 
-  /* =====================================================
-     LOAD DIAMOND HERO SLIDES
-  ===================================================== */
-
-  try {
-    heroSlides =
-      await getHeroSlides();
-  } catch (error) {
-    console.error(
-      "Failed to load Diamond hero slides:",
-      error
-    );
-  }
-
-  /* =====================================================
-     ACTIVE DIAMOND HERO SLIDES
-  ===================================================== */
-
-  const activeHeroSlides =
-    heroSlides
-      .filter(
-        (slide) =>
-          slide.active &&
-          slide.page === "Diamonds" &&
-          (
-            slide.videoUrl ||
-            slide.imageUrl
-          )
-      )
-      .sort(
-        (a, b) =>
-          a.order - b.order
-      );
-
-  /* =====================================================
-     ACTIVE CATEGORIES
-  ===================================================== */
+  /*
+   * =====================================================
+   * ACTIVE DIAMOND CATEGORIES
+   * =====================================================
+   */
 
   const activeCategories =
     categories.filter(
-      (item) => item.active
-    );
 
-  const selectedCategory =
-    activeCategories.find(
       (item) =>
-        item.id === category
+        item.active &&
+        item.collection === "Diamond"
     );
 
-  /* =====================================================
-     WHATSAPP
-  ===================================================== */
+  /*
+   * =====================================================
+   * PURITY OPTIONS
+   * =====================================================
+   */
+
+  const purityOptions = Array.from(
+    new Set(
+      products
+        .map((product) =>
+          product.purity?.trim()
+        )
+        .filter(Boolean)
+    )
+  ).sort((a, b) =>
+    a.localeCompare(b)
+  );
+
+  /*
+   * =====================================================
+   * PURITY FILTER
+   * =====================================================
+   */
+
+  if (purity) {
+    products = products.filter(
+      (product) =>
+        product.purity?.trim() === purity
+    );
+  }
+
+  /*
+   * =====================================================
+   * SORT
+   * =====================================================
+   */
+
+  products = [...products].sort(
+    (a, b) => {
+      if (
+        a.featured &&
+        !b.featured
+      ) {
+        return -1;
+      }
+
+      if (
+        !a.featured &&
+        b.featured
+      ) {
+        return 1;
+      }
+
+      return a.name.localeCompare(
+        b.name
+      );
+    }
+  );
+
+  /*
+   * =====================================================
+   * WHATSAPP
+   * =====================================================
+   */
 
   const whatsappMessage =
-    selectedCategory
-      ? `Hello, I am interested in your Diamond ${selectedCategory.name} Jewellery Collection.`
-      : "Hello, I would like to know more about your Diamond Jewellery Collection.";
+    "Hello, I would like to know more about your Diamond Jewellery Collection.";
 
-  const whatsappUrl =
-    store?.whatsapp
-      ? `https://wa.me/${store.whatsapp}?text=${encodeURIComponent(
-          whatsappMessage
-        )}`
-      : "";
+  const whatsappUrl = store?.whatsapp
+    ? `https://wa.me/${store.whatsapp}?text=${encodeURIComponent(
+        whatsappMessage
+      )}`
+    : "";
+
+  /*
+   * =====================================================
+   * ACTIVE FILTER COUNT
+   * =====================================================
+   */
+
+  const activeFilterCount =
+    Number(Boolean(search)) +
+    Number(Boolean(category)) +
+    Number(Boolean(purity)) +
+    Number(featured);
 
   return (
     <main className="min-h-screen bg-[#f8f5ef] text-[#1c1a17]">
 
-      {/* =====================================================
-          DIAMOND HERO SLIDER
-      ===================================================== */}
-
-      <HeroSlider
-        slides={activeHeroSlides}
-      />
-
-      {/* =====================================================
-          CATEGORY FILTER
-      ===================================================== */}
+      {/* =================================================
+          SHOPPING FILTER
+      ================================================= */}
 
       <section className="border-b border-[#e5ded2] bg-[#f8f5ef]">
+        <div className="mx-auto max-w-350 px-5 py-5 sm:px-8 lg:px-10">
 
-        <div className="mx-auto max-w-[1400px] px-5 py-7 sm:px-8 lg:px-10">
+          {/* MOBILE FILTER */}
 
-          <div className="flex flex-wrap items-center justify-center gap-2.5">
+          <details className="lg:hidden">
+            <summary className="flex cursor-pointer list-none items-center justify-between border border-[#d8c9b5] bg-[#f1ece3] px-5 py-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#b08d57]">
+                  Shop Diamonds
+                </p>
 
-            {/* ALL DIAMONDS */}
+                <p className="mt-1 text-sm font-semibold text-[#1c1a17]">
+                  Filters
+                  {activeFilterCount > 0 &&
+                    ` (${activeFilterCount})`}
+                </p>
+              </div>
 
-            <Link
-              href="/diamond"
-              className={`border px-5 py-2.5 text-[9px] font-semibold uppercase tracking-[0.15em] transition-all duration-300 sm:text-[10px] ${
-                !category
-                  ? "border-[#b08d57] bg-[#b08d57] text-white"
-                  : "border-[#e5ded2] bg-[#f1ece3] text-[#777169] hover:border-[#b08d57] hover:text-[#b08d57]"
-              }`}
-            >
-              All Diamonds
-            </Link>
+              <span className="text-lg text-[#b08d57]">
+                +
+              </span>
+            </summary>
 
-            {/* DIAMOND CATEGORIES */}
+            <div className="border-x border-b border-[#d8c9b5] bg-white p-5">
+              <DiamondFilterForm
+                search={search}
+                category={category}
+                purity={purity}
+                featured={featured}
+                categories={activeCategories}
+                purityOptions={purityOptions}
+              />
+            </div>
+          </details>
 
-            {activeCategories.map(
-              (item) => (
-                <Link
-                  key={item.id}
-                  href={`/diamond?category=${encodeURIComponent(
-                    item.id
-                  )}`}
-                  className={`border px-5 py-2.5 text-[9px] font-semibold uppercase tracking-[0.15em] transition-all duration-300 sm:text-[10px] ${
-                    category === item.id
-                      ? "border-[#b08d57] bg-[#b08d57] text-white"
-                      : "border-[#e5ded2] bg-[#f1ece3] text-[#777169] hover:border-[#b08d57] hover:text-[#b08d57]"
-                  }`}
-                >
-                  {item.name}
-                </Link>
-              )
-            )}
+          {/* DESKTOP FILTER */}
 
+          <div className="hidden lg:block">
+            <DiamondFilterForm
+              search={search}
+              category={category}
+              purity={purity}
+              featured={featured}
+              categories={activeCategories}
+              purityOptions={purityOptions}
+            />
           </div>
 
         </div>
 
       </section>
 
-      {/* =====================================================
+      {/* =================================================
           PRODUCTS
-      ===================================================== */}
+      ================================================= */}
 
       <section className="bg-[#f8f5ef]">
+        <div className="mx-auto max-w-350 px-5 py-8 sm:px-8 sm:py-12 lg:px-10">
 
-        <div className="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
+          {/* RESULT HEADER */}
 
-          <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="mb-8 flex flex-col gap-4 border-b border-[#e5ded2] pb-6 sm:flex-row sm:items-center sm:justify-between">
 
             <div>
-
-              <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#b08d57] sm:text-xs">
-                {selectedCategory?.name ||
-                  "Explore"}
+              <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-[#b08d57]">
+                Diamond Jewellery
               </p>
 
-              <h2 className="mt-2 font-display text-3xl font-normal text-[#1c1a17] sm:text-4xl">
-                {selectedCategory
-                  ? `${selectedCategory.name} Jewellery`
-                  : "Diamond Collection"}
-              </h2>
-
+              <h1 className="mt-1 font-display text-2xl font-normal text-[#1c1a17] sm:text-3xl">
+                Products
+              </h1>
             </div>
 
-            <div className="flex items-center gap-5">
-
-              <p className="text-[9px] uppercase tracking-[0.15em] text-[#918a81] sm:text-[10px]">
+            <div className="flex items-center gap-4">
+              <p className="text-[10px] uppercase tracking-[0.15em] text-[#918a81]">
                 {products.length}{" "}
                 {products.length === 1
                   ? "Piece"
                   : "Pieces"}
               </p>
 
-              {category && (
+              {activeFilterCount > 0 && (
                 <Link
                   href="/diamond"
-                  className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[#b08d57] transition-colors hover:text-[#8f6f3f] sm:text-[10px]"
+                  className="text-[10px] font-semibold uppercase tracking-[0.15em] text-[#b08d57] transition-colors hover:text-[#8f6f3f]"
                 >
-                  Clear Filter →
+                  Clear All
                 </Link>
               )}
 
@@ -267,7 +315,7 @@ export default async function DiamondPage({
 
           </div>
 
-          {/* PRODUCTS */}
+          {/* PRODUCT GRID */}
 
           {products.length === 0 ? (
 
@@ -282,20 +330,16 @@ export default async function DiamondPage({
               </h2>
 
               <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#777169]">
-                We currently don&apos;t have any active
-                Diamond jewellery products in this
-                category.
+                No diamond jewellery products
+                match your selected filters.
               </p>
 
-              {category && (
-                <Link
-                  href="/diamond"
-                  className="mt-8 inline-flex min-h-[50px] items-center justify-center bg-[#b08d57] px-7 text-[10px] font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:bg-[#8f6f3f] sm:text-xs"
-                >
-                  View All Diamond Jewellery
-                </Link>
-              )}
-
+              <Link
+                href="/diamond"
+                className="mt-8 inline-flex min-h-12.5 items-center justify-center bg-[#b08d57] px-7 text-[10px] font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:bg-[#8f6f3f] sm:text-xs"
+              >
+                Clear Filters
+              </Link>
             </div>
 
           ) : (
@@ -319,13 +363,12 @@ export default async function DiamondPage({
 
       </section>
 
-      {/* =====================================================
+      {/* =================================================
           DIAMOND STORE
-      ===================================================== */}
+      ================================================= */}
 
       <section className="border-t border-[#e5ded2] bg-[#f1ece3]">
-
-        <div className="mx-auto max-w-[1400px] px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
+        <div className="mx-auto max-w-350 px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
 
           <div className="mx-auto mb-12 max-w-2xl text-center">
 
@@ -340,8 +383,8 @@ export default async function DiamondPage({
             <div className="mx-auto mt-5 h-px w-12 bg-[#b08d57]" />
 
             <p className="mt-5 text-sm leading-7 text-[#777169] sm:text-base">
-              Visit our Diamond store and explore our
-              collection in person.
+              Visit our Diamond store and explore
+              our collection in person.
             </p>
 
           </div>
@@ -410,7 +453,7 @@ export default async function DiamondPage({
                   href={whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex min-h-[50px] flex-1 items-center justify-center bg-[#b08d57] px-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition-all duration-300 hover:bg-[#8f6f3f] sm:text-xs"
+                  className="flex min-h-12.5 flex-1 items-center justify-center bg-[#b08d57] px-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition-all duration-300 hover:bg-[#8f6f3f] sm:text-xs"
                 >
                   WhatsApp Store
                 </a>
@@ -421,7 +464,7 @@ export default async function DiamondPage({
                   href={store.googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex min-h-[50px] flex-1 items-center justify-center border border-[#b08d57] px-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1a17] transition-all duration-300 hover:bg-[#b08d57] hover:text-white sm:text-xs"
+                  className="flex min-h-12.5 flex-1 items-center justify-center border border-[#b08d57] px-5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1c1a17] transition-all duration-300 hover:bg-[#b08d57] hover:text-white sm:text-xs"
                 >
                   View Store Location
                 </a>
@@ -434,45 +477,145 @@ export default async function DiamondPage({
         </div>
 
       </section>
-
-      {/* =====================================================
-          GOLD CTA
-      ===================================================== */}
-
-      <section className="border-t border-[#e5ded2] bg-[#f8f5ef]">
-
-        <div className="mx-auto max-w-4xl px-5 py-20 text-center sm:px-8 sm:py-24">
-
-          <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#b08d57] sm:text-xs sm:tracking-[0.4em]">
-            Discover More
-          </p>
-
-          <h2 className="mt-4 font-display text-4xl font-normal text-[#1c1a17] sm:text-5xl">
-            Looking For Gold?
-          </h2>
-
-          <p className="mx-auto mt-5 max-w-xl text-sm leading-7 text-[#777169] sm:text-base">
-            Discover timeless gold jewellery crafted
-            to become part of your most beautiful
-            moments.
-          </p>
-
-          <div className="mt-8">
-
-            <Link
-              href="/gold"
-              className="inline-flex min-h-[52px] items-center justify-center bg-[#b08d57] px-8 text-xs font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#8f6f3f]"
-            >
-              Explore Gold
-            </Link>
-
-          </div>
-
-        </div>
-
-      </section>
-
     </main>
+  );
+}
+
+/* =========================================================
+   DIAMOND FILTER FORM
+========================================================= */
+
+function DiamondFilterForm({
+  search,
+  category,
+  purity,
+  featured,
+  categories,
+  purityOptions,
+}: {
+  search: string;
+  category: string;
+  purity: string;
+  featured: boolean;
+  categories: Category[];
+  purityOptions: string[];
+}) {
+  return (
+    <form
+      method="GET"
+      action="/diamond"
+      className="grid gap-5 lg:grid-cols-[minmax(260px,1.5fr)_1fr_1fr_auto]"
+    >
+      {/* SEARCH */}
+
+      <div>
+        <label
+          htmlFor="diamond-search"
+          className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.2em] text-[#8f867b]"
+        >
+          Search
+        </label>
+
+        <input
+          id="diamond-search"
+          name="q"
+          type="search"
+          defaultValue={search}
+          placeholder="Search jewellery..."
+          className="h-12 w-full border border-[#d8c9b5] bg-white px-4 text-sm text-[#1c1a17] outline-none transition focus:border-[#b08d57] focus:ring-1 focus:ring-[#b08d57]"
+        />
+      </div>
+
+      {/* CATEGORY */}
+
+      <div>
+        <label
+          htmlFor="diamond-category"
+          className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.2em] text-[#8f867b]"
+        >
+          Category
+        </label>
+
+        <select
+          id="diamond-category"
+          name="category"
+          defaultValue={category}
+          className="h-12 w-full border border-[#d8c9b5] bg-white px-4 text-sm text-[#1c1a17] outline-none transition focus:border-[#b08d57] focus:ring-1 focus:ring-[#b08d57]"
+        >
+          <option value="">
+            All Categories
+          </option>
+
+          {categories.map((item) => (
+            <option
+              key={item.id}
+              value={item.id}
+            >
+              {item.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* PURITY */}
+
+      <div>
+        <label
+          htmlFor="diamond-purity"
+          className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.2em] text-[#8f867b]"
+        >
+          Purity
+        </label>
+
+        <select
+          id="diamond-purity"
+          name="purity"
+          defaultValue={purity}
+          className="h-12 w-full border border-[#d8c9b5] bg-white px-4 text-sm text-[#1c1a17] outline-none transition focus:border-[#b08d57] focus:ring-1 focus:ring-[#b08d57]"
+        >
+          <option value="">
+            All Purities
+          </option>
+
+          {purityOptions.map(
+            (item) => (
+              <option
+                key={item}
+                value={item}
+              >
+                {item}
+              </option>
+            )
+          )}
+        </select>
+      </div>
+
+      {/* ACTIONS */}
+
+      <div className="flex items-end gap-2">
+
+        <label className="flex h-12 flex-1 cursor-pointer items-center gap-2 border border-[#d8c9b5] bg-white px-4">
+          <input
+            type="checkbox"
+            name="featured"
+            value="true"
+            defaultChecked={featured}
+            className="h-4 w-4 accent-[#b08d57]"
+          />
+
+          <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#4d4943]">
+            Featured
+          </span>
+        </label>
+
+        <button
+          type="submit"
+          className="h-12 bg-[#b08d57] px-6 text-[10px] font-semibold uppercase tracking-[0.16em] text-white transition hover:bg-[#8f6f3f]"
+        >
+          Filter
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -492,17 +635,20 @@ function DiamondProductCard({
 
   return (
     <Link
-     href ={`/products/${product.slug || product.id}`}
+      href={`/products/${product.slug || product.id}`}
       className="group block"
     >
 
       <div className="relative aspect-square overflow-hidden border border-[#e5ded2] bg-[#f1ece3]">
 
         {productImage ? (
-          <img
+          <Image
             src={productImage}
             alt={product.name}
-            className="h-full w-full object-cover transition duration-700 group-hover:scale-[1.04]"
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+            unoptimized
+            className="object-cover transition duration-700 group-hover:scale-[1.04]"
           />
         ) : (
           <div className="flex h-full items-center justify-center">
@@ -514,9 +660,7 @@ function DiamondProductCard({
           </div>
         )}
 
-        <span className="absolute left-3 top-3 bg-[#b08d57] px-3 py-1.5 text-[8px] font-semibold uppercase tracking-[0.16em] text-white sm:text-[9px]">
-          New
-        </span>
+
 
         {product.featured && (
           <span className="absolute right-3 top-3 border border-[#e5ded2] bg-[#f8f5ef]/95 px-3 py-1.5 text-[8px] font-semibold uppercase tracking-[0.16em] text-[#b08d57] backdrop-blur sm:text-[9px]">
@@ -537,19 +681,10 @@ function DiamondProductCard({
           {product.name}
         </h3>
 
-      
-
-        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] uppercase tracking-[0.1em] text-[#918a81] sm:text-[10px]">
-
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] uppercase tracking-widest text-[#918a81] sm:text-[10px]">
           {product.purity && (
             <span>
               {product.purity}
-            </span>
-          )}
-
-          {product.weight > 0 && (
-            <span>
-              {product.weight} g
             </span>
           )}
 

@@ -76,9 +76,6 @@ function htmlResponse(
 export async function GET(
   request: Request
 ) {
-  const responseCookies =
-    new Map<string, string>();
-
   try {
     /*
      * The callback must belong to an authenticated

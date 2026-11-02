@@ -2,16 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
 import {
   LayoutDashboard,
   Package,
-  Diamond,
   Folder,
   Image,
   BadgeIndianRupee,
   Store,
   BookOpen,
+  Images,
+  Settings,
   X,
 } from "lucide-react";
 
@@ -55,6 +55,16 @@ const menus = [
     name: "Our Story",
     href: "/admin/our-story",
     icon: BookOpen,
+  },
+  {
+    name: "Product Settings",
+    href: "/admin/product-settings",
+    icon: Settings,
+  },
+  {
+    name: "Gallery",
+    href: "/admin/gallery",
+    icon: Images,
   },
 ];
 
@@ -100,7 +110,7 @@ export default function Sidebar({
             </div>
 
             <div className="mt-0.5 text-[9px] uppercase tracking-[0.3em] text-[#756B5E]">
-              Jewellers &amp; Diamonds
+              Jewellers & Diamonds
             </div>
           </Link>
 

@@ -1,11 +1,8 @@
 import { NextResponse } from "next/server";
-import { Readable } from "stream";
-import { Query } from "node-appwrite";
 
-import {
-  ADMIN_AUTH_COOKIE,
-  ADMIN_AUTH_COOKIE_OPTIONS,
-} from "@/lib/auth-config";
+import { Readable } from "stream";
+
+import { Query } from "node-appwrite";
 
 import {
   getAuthenticatedAdminClient,
@@ -19,6 +16,11 @@ import {
   APPWRITE_DATABASE_ID,
   tablesDB,
 } from "@/lib/appwrite";
+
+import {
+  APPWRITE_GALLERY_TABLE_ID,
+  APPWRITE_PRODUCT_SETTINGS_TABLE_ID,
+} from "@/lib/appwrite-tables";
 
 import {
   drive,
@@ -36,6 +38,10 @@ type Props = {
     id: string;
   }>;
 };
+
+/* =========================================================
+   RESPONSE HELPERS
+========================================================= */
 
 function unauthorizedResponse() {
   return NextResponse.json(
@@ -65,6 +71,10 @@ function errorResponse(error: unknown) {
   );
 }
 
+/* =========================================================
+   APPWRITE TABLE MAPPING
+========================================================= */
+
 function getAppwriteTableId(
   resource: string
 ): string | null {
@@ -90,40 +100,40 @@ function getAppwriteTableId(
     case "OurStory":
       return "ourstory";
 
-    case "Enquiries":
+case "ProductSettings":
+  return APPWRITE_PRODUCT_SETTINGS_TABLE_ID;
+
+  case "Enquiries":
       return "enquiries";
+
+    case "Gallery":
+       return APPWRITE_GALLERY_TABLE_ID;
 
     default:
       return null;
   }
 }
 
+/* =========================================================
+   GOOGLE DRIVE FOLDER
+========================================================= */
+
 function getDriveFolderName(
   resource: string,
   formData: FormData
 ): string | null {
-  if (
-    resource === "Products"
-  ) {
-    const collectionValue =
-      String(
-        formData.get(
-          "collection"
-        ) ??
-          formData.get(
-            "collectionId"
-          ) ??
-          ""
-      )
-        .trim()
-        .toLowerCase();
+  if (resource === "Products") {
+    const collectionValue = String(
+      formData.get("collection") ??
+        formData.get("collectionId") ??
+        ""
+    )
+      .trim()
+      .toLowerCase();
 
     if (
-      collectionValue ===
-        "diamond" ||
-      collectionValue.includes(
-        "diamond"
-      )
+      collectionValue === "diamond" ||
+      collectionValue.includes("diamond")
     ) {
       return "Diamonds";
     }
@@ -131,39 +141,34 @@ function getDriveFolderName(
     return "Gold";
   }
 
-  if (
-    resource ===
-    "HeroSliders"
-  ) {
+  if (resource === "HeroSliders") {
     return "Hero";
   }
 
-  if (
-    resource ===
-    "Categories"
-  ) {
+  if (resource === "Categories") {
     return "Categories";
   }
 
-  if (
-    resource ===
-    "Collections"
-  ) {
+  if (resource === "Collections") {
     return "Categories";
   }
 
   return null;
 }
 
+/* =========================================================
+   GOOGLE DRIVE UPLOAD SECURITY
+========================================================= */
+
 const IMAGE_MIME_TYPES =
-  new Set([
+  new Set<string>([
     "image/jpeg",
     "image/png",
     "image/webp",
   ]);
 
 const VIDEO_MIME_TYPES =
-  new Set([
+  new Set<string>([
     "video/mp4",
     "video/webm",
   ]);
@@ -174,35 +179,31 @@ const MAX_IMAGE_SIZE =
 const MAX_VIDEO_SIZE =
   100 * 1024 * 1024;
 
+/* =========================================================
+   GOOGLE DRIVE UPLOAD
+========================================================= */
+
 async function uploadFileToDrive(
   file: File,
   folderName: string,
   allowedMimeTypes: Set<string>,
   maxSizeBytes: number
 ) {
-  if (
-    !(file instanceof File)
-  ) {
+  if (!(file instanceof File)) {
     throw new Error(
       "Invalid upload."
     );
   }
 
-  if (
-    file.size <= 0
-  ) {
+  if (file.size <= 0) {
     throw new Error(
       "The uploaded file is empty."
     );
   }
 
-  if (
-    file.size >
-    maxSizeBytes
-  ) {
+  if (file.size > maxSizeBytes) {
     const maxSizeMB =
-      maxSizeBytes /
-      (1024 * 1024);
+      maxSizeBytes / (1024 * 1024);
 
     throw new Error(
       `File "${file.name}" is too large. Maximum allowed size is ${maxSizeMB} MB.`
@@ -230,55 +231,40 @@ async function uploadFileToDrive(
       folderName
     );
 
-  if (
-    !folder?.id
-  ) {
+  if (!folder?.id) {
     throw new Error(
       `Google Drive folder "${folderName}" was not found.`
     );
   }
 
-  const buffer =
-    Buffer.from(
-      await file.arrayBuffer()
-    );
+  const buffer = Buffer.from(
+    await file.arrayBuffer()
+  );
 
   const uploadedFile =
     await drive.files.create({
       requestBody: {
-        name:
-          file.name,
-
-        parents: [
-          folder.id,
-        ],
+        name: file.name,
+        parents: [folder.id],
       },
 
       media: {
-        mimeType:
-          detectedMimeType,
-
-        body:
-          Readable.from(
-            buffer
-          ),
+        mimeType: detectedMimeType,
+        body: Readable.from(buffer),
       },
 
       fields:
         "id,name,mimeType,size",
     });
 
-  if (
-    !uploadedFile.data.id
-  ) {
+  if (!uploadedFile.data.id) {
     throw new Error(
       `Google Drive did not return a file ID for "${file.name}".`
     );
   }
 
   return {
-    id:
-      uploadedFile.data.id,
+    id: uploadedFile.data.id,
 
     name:
       uploadedFile.data.name ??
@@ -290,6 +276,10 @@ async function uploadFileToDrive(
   };
 }
 
+/* =========================================================
+   FORM DATA HELPERS
+========================================================= */
+
 function formValue(
   formData: FormData,
   key: string
@@ -297,15 +287,11 @@ function formValue(
   const value =
     formData.get(key);
 
-  if (
-    value === null
-  ) {
+  if (value === null) {
     return undefined;
   }
 
-  if (
-    value instanceof File
-  ) {
+  if (value instanceof File) {
     return undefined;
   }
 
@@ -322,9 +308,7 @@ function booleanValue(
       key
     );
 
-  if (
-    value === undefined
-  ) {
+  if (value === undefined) {
     return undefined;
   }
 
@@ -355,25 +339,132 @@ function numberValue(
   const number =
     Number(value);
 
-  return Number.isNaN(
-    number
-  )
+  return Number.isNaN(number)
     ? undefined
     : number;
 }
 
+/* =========================================================
+   PRODUCT SLUG HELPERS
+========================================================= */
+
+function slugify(
+  value: string
+) {
+  return value
+    .normalize("NFKD")
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+    .toLowerCase()
+    .trim()
+    .replace(
+      /[^a-z0-9]+/g,
+      "-"
+    )
+    .replace(
+      /^-+|-+$/g,
+      "");
+}
+
+async function getUniqueProductSlug(
+  requestedSlug: string | undefined,
+  productName: string | undefined,
+  currentId?: string
+) {
+  const base =
+    slugify(
+      requestedSlug?.trim() ||
+        productName?.trim() ||
+        "product"
+    ) ||
+    `product-${Date.now()}`;
+
+  let candidate = base;
+
+  let suffix = 2;
+
+  while (true) {
+    const result =
+      await tablesDB.listRows({
+        databaseId:
+          APPWRITE_DATABASE_ID,
+
+        tableId: "products",
+
+        queries: [
+          Query.equal(
+            "slug",
+            [candidate]
+          ),
+          Query.limit(10),
+        ],
+      });
+
+    const conflictingRow =
+      result.rows.find(
+        (row) =>
+          String(
+            row.$id ?? ""
+          ) !==
+          String(
+            currentId ?? ""
+          )
+      );
+
+    if (!conflictingRow) {
+      return candidate;
+    }
+
+    candidate =
+      `${base}-${suffix}`;
+
+    suffix += 1;
+  }
+}
+
+/* =========================================================
+   NORMALIZE COLLECTION
+========================================================= */
+
+function normalizeCollectionValue(
+  value: unknown
+) {
+  return String(
+    value ?? ""
+  )
+    .trim()
+    .toLowerCase()
+    .replace(
+      /\s+/g,
+      "-"
+    );
+}
+
+/* =========================================================
+   RESOLVE COLLECTION ID
+========================================================= */
+
 async function resolveCollectionId(
   formData: FormData
 ) {
-  const raw =
+  const submittedCollectionId =
     formValue(
       formData,
       "collectionId"
-    ) ??
+    );
+
+  const submittedCollection =
     formValue(
       formData,
       "collection"
     );
+
+  const raw =
+    submittedCollectionId?.trim()
+      ? submittedCollectionId.trim()
+      : submittedCollection?.trim();
 
   if (!raw) {
     return undefined;
@@ -392,44 +483,78 @@ async function resolveCollectionId(
       ],
     });
 
-  const direct =
-    result.rows.find(
-      (row) =>
-        String(row.$id) ===
-        raw
-    );
+  /* 1. Exact Appwrite ID */
 
-  if (direct) {
-    return String(
-      direct.$id
-    );
-  }
-
-  const byName =
+  const directMatch =
     result.rows.find(
       (row) =>
         String(
-          row.name ?? ""
-        )
-          .trim()
-          .toLowerCase() ===
-        raw
-          .trim()
-          .toLowerCase()
+          row.$id ?? ""
+        ) === raw
     );
 
-  return byName
-    ? String(
-        byName.$id
-      )
-    : undefined;
+  if (directMatch) {
+    return String(
+      directMatch.$id
+    );
+  }
+
+  const normalizedRaw =
+    normalizeCollectionValue(
+      raw
+    );
+
+  /* 2. Collection name */
+
+  const nameMatch =
+    result.rows.find(
+      (row) =>
+        normalizeCollectionValue(
+          row.name
+        ) ===
+        normalizedRaw
+    );
+
+  if (nameMatch) {
+    return String(
+      nameMatch.$id
+    );
+  }
+
+  /* 3. Collection slug */
+
+  const slugMatch =
+    result.rows.find(
+      (row) =>
+        normalizeCollectionValue(
+          row.slug
+        ) ===
+        normalizedRaw
+    );
+
+  if (slugMatch) {
+    return String(
+      slugMatch.$id
+    );
+  }
+
+  console.error(
+    `[Admin Products] Collection not found for value: ${raw}`
+  );
+
+  return undefined;
 }
+
+/* =========================================================
+   BUILD APPWRITE DATA
+========================================================= */
 
 async function buildAppwriteData(
   resource: string,
   formData: FormData,
   driveImageIds: string[],
-  driveVideoId: string
+  driveVideoId: string,
+  currentId?: string
 ) {
   const data: Record<
     string,
@@ -437,6 +562,11 @@ async function buildAppwriteData(
   > = {};
 
   switch (resource) {
+
+    /* =====================================================
+       CATEGORIES
+    ===================================================== */
+
     case "Categories": {
       const fields = [
         "name",
@@ -467,16 +597,12 @@ async function buildAppwriteData(
           "active"
         );
 
-      if (
-        active !== undefined
-      ) {
-        data.active =
-          active;
+      if (active !== undefined) {
+        data.active = active;
       }
 
       if (
-        driveImageIds.length >
-        0
+        driveImageIds.length > 0
       ) {
         data.driveImage =
           driveImageIds[0];
@@ -484,6 +610,10 @@ async function buildAppwriteData(
 
       break;
     }
+
+    /* =====================================================
+       COLLECTIONS
+    ===================================================== */
 
     case "Collections": {
       const fields = [
@@ -514,16 +644,12 @@ async function buildAppwriteData(
           "active"
         );
 
-      if (
-        active !== undefined
-      ) {
-        data.active =
-          active;
+      if (active !== undefined) {
+        data.active = active;
       }
 
       if (
-        driveImageIds.length >
-        0
+        driveImageIds.length > 0
       ) {
         data.driveImage =
           driveImageIds[0];
@@ -531,6 +657,10 @@ async function buildAppwriteData(
 
       break;
     }
+
+    /* =====================================================
+       STORES
+    ===================================================== */
 
     case "Stores": {
       const storeType =
@@ -571,8 +701,7 @@ async function buildAppwriteData(
       }
 
       if (
-        storeType !==
-        undefined
+        storeType !== undefined
       ) {
         data.storeType =
           storeType;
@@ -584,16 +713,12 @@ async function buildAppwriteData(
           "active"
         );
 
-      if (
-        active !== undefined
-      ) {
-        data.active =
-          active;
+      if (active !== undefined) {
+        data.active = active;
       }
 
       if (
-        driveImageIds.length >
-        0
+        driveImageIds.length > 0
       ) {
         data.driveLogo =
           driveImageIds[0];
@@ -601,6 +726,10 @@ async function buildAppwriteData(
 
       break;
     }
+
+    /* =====================================================
+       RATES
+    ===================================================== */
 
     case "Rates": {
       const fields = [
@@ -632,9 +761,7 @@ async function buildAppwriteData(
           "rate"
         );
 
-      if (
-        rate !== undefined
-      ) {
+      if (rate !== undefined) {
         data.rate = rate;
       }
 
@@ -644,15 +771,16 @@ async function buildAppwriteData(
           "active"
         );
 
-      if (
-        active !== undefined
-      ) {
-        data.active =
-          active;
+      if (active !== undefined) {
+        data.active = active;
       }
 
       break;
     }
+
+    /* =====================================================
+       HERO SLIDERS
+    ===================================================== */
 
     case "HeroSliders": {
       const fields = [
@@ -687,11 +815,8 @@ async function buildAppwriteData(
           "active"
         );
 
-      if (
-        active !== undefined
-      ) {
-        data.active =
-          active;
+      if (active !== undefined) {
+        data.active = active;
       }
 
       const order =
@@ -700,30 +825,28 @@ async function buildAppwriteData(
           "order"
         );
 
-      if (
-        order !== undefined
-      ) {
-        data.order =
-          order;
+      if (order !== undefined) {
+        data.order = order;
       }
 
       if (
-        driveImageIds.length >
-        0
+        driveImageIds.length > 0
       ) {
         data.driveImage =
           driveImageIds[0];
       }
 
-      if (
-        driveVideoId
-      ) {
+      if (driveVideoId) {
         data.driveVideo =
           driveVideoId;
       }
 
       break;
     }
+
+    /* =====================================================
+       PRODUCTS
+    ===================================================== */
 
     case "Products": {
       const fields = [
@@ -765,8 +888,7 @@ async function buildAppwriteData(
         );
 
       if (
-        categoryId !==
-        undefined
+        categoryId !== undefined
       ) {
         data.categoryId =
           categoryId;
@@ -778,8 +900,7 @@ async function buildAppwriteData(
         );
 
       if (
-        collectionId !==
-        undefined
+        collectionId !== undefined
       ) {
         data.collectionId =
           collectionId;
@@ -791,11 +912,8 @@ async function buildAppwriteData(
           "weight"
         );
 
-      if (
-        weight !== undefined
-      ) {
-        data.weight =
-          weight;
+      if (weight !== undefined) {
+        data.weight = weight;
       }
 
       const makingCharges =
@@ -831,30 +949,61 @@ async function buildAppwriteData(
           "active"
         );
 
-      if (
-        active !== undefined
-      ) {
+      if (active !== undefined) {
         data.active =
           active;
       }
 
       if (
-        driveImageIds.length >
-        0
+        driveImageIds.length > 0
       ) {
         data.driveImages =
           driveImageIds;
       }
 
-      if (
-        driveVideoId
-      ) {
+      if (driveVideoId) {
         data.driveVideo =
           driveVideoId;
       }
 
+      /*
+       * IMPORTANT:
+       *
+       * If slug is empty while editing,
+       * automatically generate one from
+       * the product name.
+       */
+
+      const productName =
+        typeof data.name ===
+        "string"
+          ? data.name
+          : undefined;
+
+      const requestedSlug =
+        typeof data.slug ===
+        "string"
+          ? data.slug
+          : undefined;
+
+      if (
+        !requestedSlug?.trim() ||
+        productName
+      ) {
+        data.slug =
+          await getUniqueProductSlug(
+            requestedSlug,
+            productName,
+            currentId
+          );
+      }
+
       break;
     }
+
+    /* =====================================================
+       OUR STORY
+    ===================================================== */
 
     case "OurStory": {
       const fields = [
@@ -888,15 +1037,43 @@ async function buildAppwriteData(
           "active"
         );
 
-      if (
-        active !== undefined
-      ) {
-        data.active =
-          active;
+      if (active !== undefined) {
+        data.active = active;
       }
 
       break;
     }
+
+    /* =====================================================
+   PRODUCT SETTINGS
+===================================================== */
+
+case "ProductSettings": {
+
+  const fields = [
+    "line1",
+    "line2",
+    "line3",
+    "line4",
+  ];
+
+  for (const field of fields) {
+    const value = formValue(
+      formData,
+      field
+    );
+
+    if (value !== undefined) {
+      data[field] = value;
+    }
+  }
+
+  break;
+}
+
+    /* =====================================================
+       ENQUIRIES
+    ===================================================== */
 
     case "Enquiries": {
       const fields = [
@@ -938,6 +1115,10 @@ async function buildAppwriteData(
 
   return data;
 }
+
+/* =========================================================
+   PATCH
+========================================================= */
 
 export async function PATCH(
   request: Request,
@@ -1005,16 +1186,23 @@ export async function PATCH(
     const driveImageIds: string[] =
       [];
 
-    let driveVideoId =
-      "";
+    let driveVideoId = "";
 
-    if (
-      driveFolderName
-    ) {
+    if (driveFolderName) {
       const imageFiles =
         originalFormData.getAll(
           "images"
         );
+
+      const singleImage =
+        originalFormData.get("image");
+
+      if (
+        imageFiles.length === 0 &&
+        singleImage instanceof File
+      ) {
+        imageFiles.push(singleImage);
+      }
 
       for (
         const item of imageFiles
@@ -1025,9 +1213,7 @@ export async function PATCH(
           continue;
         }
 
-        if (
-          item.size === 0
-        ) {
+        if (item.size === 0) {
           continue;
         }
 
@@ -1079,7 +1265,8 @@ export async function PATCH(
         collection,
         originalFormData,
         driveImageIds,
-        driveVideoId
+        driveVideoId,
+        id
       );
 
     const record =
@@ -1094,18 +1281,9 @@ export async function PATCH(
         data,
       });
 
-    const response =
-      NextResponse.json(
-        record
-      );
-
-    response.cookies.set(
-      ADMIN_AUTH_COOKIE,
-      adminClient.refreshedToken,
-      ADMIN_AUTH_COOKIE_OPTIONS
+    return NextResponse.json(
+      record
     );
-
-    return response;
   } catch (error) {
     await deleteDriveFiles(
       uploadedDriveFileIds
@@ -1116,6 +1294,10 @@ export async function PATCH(
     );
   }
 }
+
+/* =========================================================
+   DELETE
+========================================================= */
 
 export async function DELETE(
   _request: Request,
@@ -1168,6 +1350,69 @@ export async function DELETE(
   }
 
   try {
+    /*
+      GALLERY DELETE
+
+      For Gallery images we first retrieve the
+      Appwrite row to get the Google Drive file ID.
+    */
+
+    if (collection === "Gallery") {
+      const existingRow =
+        await tablesDB.getRow({
+          databaseId:
+            APPWRITE_DATABASE_ID,
+
+          tableId,
+
+          rowId: id,
+        });
+
+      const driveFileId =
+        String(
+          existingRow.driveFileId ??
+            ""
+        ).trim();
+
+      /*
+        Delete the Google Drive image first.
+
+        If this fails, the Appwrite row remains,
+        so the admin can retry the deletion.
+      */
+
+      if (driveFileId) {
+        await deleteDriveFiles([
+          driveFileId,
+        ]);
+      }
+
+      /*
+        Delete the Gallery row from Appwrite.
+      */
+
+      await tablesDB.deleteRow({
+        databaseId:
+          APPWRITE_DATABASE_ID,
+
+        tableId,
+
+        rowId: id,
+      });
+
+      return new NextResponse(
+        null,
+        {
+          status: 204,
+        }
+      );
+    }
+
+    /*
+      EXISTING DELETE BEHAVIOUR
+      FOR ALL OTHER RESOURCES
+    */
+
     await tablesDB.deleteRow({
       databaseId:
         APPWRITE_DATABASE_ID,
@@ -1177,21 +1422,12 @@ export async function DELETE(
       rowId: id,
     });
 
-    const response =
-      new NextResponse(
-        null,
-        {
-          status: 204,
-        }
-      );
-
-    response.cookies.set(
-      ADMIN_AUTH_COOKIE,
-      adminClient.refreshedToken,
-      ADMIN_AUTH_COOKIE_OPTIONS
+    return new NextResponse(
+      null,
+      {
+        status: 204,
+      }
     );
-
-    return response;
   } catch (error) {
     return errorResponse(
       error

@@ -18,6 +18,10 @@ export type Store = {
   active: boolean;
 };
 
+/* =========================================================
+   NORMALIZE COLLECTION
+========================================================= */
+
 function normalizeCollection(
   value: unknown
 ): "Gold" | "Diamond" {
@@ -26,11 +30,28 @@ function normalizeCollection(
     .trim()
     .toLowerCase();
 
-  if (text === "diamond") {
+  /*
+   * Accept all common Diamond values.
+   */
+
+  if (
+    text === "diamond" ||
+    text === "diamonds" ||
+    text.includes("diamond")
+  ) {
     return "Diamond";
   }
 
-  if (text === "gold") {
+  /*
+   * Accept all common Gold values.
+   */
+
+  if (
+    text === "gold" ||
+    text === "gold jewellery" ||
+    text === "gold jewelry" ||
+    text.includes("gold")
+  ) {
     return "Gold";
   }
 
@@ -41,19 +62,86 @@ function normalizeCollection(
   return "Gold";
 }
 
+/* =========================================================
+   NORMALIZE PHONE / WHATSAPP
+========================================================= */
+
+function normalizePhone(
+  value: unknown
+): string {
+  return String(value ?? "")
+    .trim()
+    .replace(/[^\d+]/g, "");
+}
+
+/* =========================================================
+   MAP APPWRITE STORE
+========================================================= */
+
 function mapStore(
   record: Record<string, unknown>
 ): Store {
+  const phone = normalizePhone(
+    record.phone
+  );
+
+  const rawWhatsapp =
+    normalizePhone(
+      record.whatsapp
+    );
+
+  /*
+   * If WhatsApp is empty, use the store phone.
+   *
+   * This guarantees that the WhatsApp button
+   * can still appear when the admin entered only
+   * the phone number.
+   */
+
+  const whatsapp =
+    rawWhatsapp || phone;
+
+  /*
+   * WhatsApp URL:
+   *
+   * If whatsappUrl already exists in Appwrite,
+   * use it.
+   *
+   * Otherwise generate it from the WhatsApp
+   * number.
+   */
+
+  const storedWhatsappUrl =
+    String(
+      record.whatsappUrl ?? ""
+    ).trim();
+
+  const whatsappUrl =
+    storedWhatsappUrl ||
+    (whatsapp
+      ? `https://wa.me/${whatsapp.replace(
+          /^\+/,
+          ""
+        )}`
+      : "");
+
   return {
-    id: String(record.$id ?? ""),
+    id: String(
+      record.$id ?? ""
+    ),
 
     name: String(
       record.name ?? ""
     ),
 
-    collection: normalizeCollection(
-      record.storeType
-    ),
+    collection:
+      normalizeCollection(
+        record.storeType
+      ),
+
+    /*
+     * Google Drive logo
+     */
 
     logo: record.driveLogo
       ? `/api/media/${encodeURIComponent(
@@ -65,17 +153,11 @@ function mapStore(
       record.address ?? ""
     ),
 
-    phone: String(
-      record.phone ?? ""
-    ),
+    phone,
 
-    whatsapp: String(
-      record.whatsapp ?? ""
-    ),
+    whatsapp,
 
-    whatsappUrl: String(
-      record.whatsappUrl ?? ""
-    ),
+    whatsappUrl,
 
     googleMapsUrl: String(
       record.googleMapsUrl ?? ""
@@ -94,6 +176,10 @@ function mapStore(
     ),
   };
 }
+
+/* =========================================================
+   SORT STORES
+========================================================= */
 
 function sortStores(
   stores: Store[]
@@ -119,6 +205,10 @@ function sortStores(
   );
 }
 
+/* =========================================================
+   GET ACTIVE STORES
+========================================================= */
+
 export async function getStores(): Promise<
   Store[]
 > {
@@ -141,10 +231,13 @@ export async function getStores(): Promise<
           )
         )
         .filter(
-          (store) => store.active
+          (store) =>
+            store.active
         );
 
-    return sortStores(stores);
+    return sortStores(
+      stores
+    );
   } catch (error) {
     console.error(
       "Failed to load stores:",
@@ -154,6 +247,10 @@ export async function getStores(): Promise<
     return [];
   }
 }
+
+/* =========================================================
+   GET STORE BY COLLECTION
+========================================================= */
 
 export async function getStoreByCollection(
   collection: "Gold" | "Diamond"
@@ -183,7 +280,9 @@ export async function getStoreByCollection(
             store.active
         );
 
-    if (stores.length === 0) {
+    if (
+      stores.length === 0
+    ) {
       console.error(
         `NO ACTIVE ${collection} STORE FOUND.`
       );
@@ -201,6 +300,10 @@ export async function getStoreByCollection(
     return null;
   }
 }
+
+/* =========================================================
+   GET ALL STORES
+========================================================= */
 
 export async function getAllStores(): Promise<
   Store[]
@@ -223,7 +326,9 @@ export async function getAllStores(): Promise<
         )
       );
 
-    return sortStores(stores);
+    return sortStores(
+      stores
+    );
   } catch (error) {
     console.error(
       "Failed to load all stores:",
@@ -233,6 +338,10 @@ export async function getAllStores(): Promise<
     return [];
   }
 }
+
+/* =========================================================
+   GET STORE BY ID
+========================================================= */
 
 export async function getStoreById(
   id: string

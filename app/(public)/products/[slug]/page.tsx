@@ -1,8 +1,16 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Query } from "node-appwrite";
+
 import ProductGallery from "@/components/public/ProductGallery";
 import WishlistButton from "@/components/public/WishlistButton";
+
+import { APPWRITE_DATABASE_ID, tablesDB } from "@/lib/appwrite";
+import {
+  APPWRITE_PRODUCT_SETTINGS_TABLE_ID,
+} from "@/lib/appwrite-tables";
 
 import { getProductBySlug } from "@/services/product.service";
 import { getStoreByCollection } from "@/services/store.service";
@@ -13,25 +21,66 @@ type Props = {
   }>;
 };
 
+type ProductSettings = {
+  line1: string;
+  line2: string;
+  line3: string;
+  line4: string;
+};
+
+async function getProductSettings(): Promise<ProductSettings> {
+  const fallback: ProductSettings = {
+    line1: "100% Certified Gold and Diamond Jewellery.",
+    line2: "Handmade jewellery.",
+    line3: "BIS Hallmark Jewellery.",
+    line4: "Shipped all over India.",
+  };
+
+  try {
+    const response = await tablesDB.listRows({
+      databaseId: APPWRITE_DATABASE_ID,
+      tableId: APPWRITE_PRODUCT_SETTINGS_TABLE_ID,
+      queries: [Query.limit(1)],
+    });
+
+    const row = response.rows?.[0] as
+      | {
+          line1?: string;
+          line2?: string;
+          line3?: string;
+          line4?: string;
+        }
+      | undefined;
+
+    if (!row) {
+      return fallback;
+    }
+
+    return {
+      line1: row.line1?.trim() || fallback.line1,
+      line2: row.line2?.trim() || fallback.line2,
+      line3: row.line3?.trim() || fallback.line3,
+      line4: row.line4?.trim() || fallback.line4,
+    };
+  } catch (error) {
+    console.error("Failed to load product settings:", error);
+
+    return fallback;
+  }
+}
+
 export default async function ProductPage({
   params,
 }: Props) {
   const { slug } = await params;
 
-  // =====================================================
-  // GET PRODUCT
-  // =====================================================
 
   let product;
 
   try {
     product = await getProductBySlug(slug);
   } catch (error) {
-    console.error(
-      "Product page failed:",
-      error
-    );
-
+    console.error("Product page failed:", error);
     notFound();
   }
 
@@ -39,26 +88,29 @@ export default async function ProductPage({
     notFound();
   }
 
-  // =====================================================
-  // COLLECTION
-  // =====================================================
+  const productSettings = await getProductSettings();
 
-  const collection =
-    product.collection === "Diamond"
-      ? "Diamond"
-      : "Gold";
+  const globalProductLines = [
+    productSettings.line1,
+    productSettings.line2,
+    productSettings.line3,
+    productSettings.line4,
+  ].filter(Boolean);
 
-  // =====================================================
-  // GET STORE
-  // =====================================================
+  const rawCollection = String(product.collection ?? "")
+    .trim()
+    .toLowerCase();
+
+  const collection = rawCollection.includes("diamond")
+    ? "Diamond"
+    : "Gold";
+
+
 
   let store = null;
 
   try {
-    store =
-      await getStoreByCollection(
-        collection
-      );
+    store = await getStoreByCollection(collection);
   } catch (error) {
     console.error(
       `Failed to load ${collection} store:`,
@@ -66,43 +118,24 @@ export default async function ProductPage({
     );
   }
 
-  // =====================================================
-  // WHATSAPP
-  // =====================================================
+
 
   const whatsappMessage =
-    `Hello, I'm interested in ${product.name} from the ${product.collection} Collection. I would like to know more about this product.`;
+    `Hello, I'm interested in ${product.name} from the ${collection} Collection. I would like to know more about this product.`;
 
-  /*
-   * Prefer the new whatsappUrl field.
-   * Fall back to the WhatsApp number for older store records.
-   */
-  const whatsappBaseUrl =
-    store?.whatsappUrl?.trim() ||
-    (store?.whatsapp
-      ? `https://wa.me/${store.whatsapp
-          .replace(/\D/g, "")
-          .trim()}`
-      : "");
-
-  const whatsappUrl =
-    whatsappBaseUrl
-      ? `${whatsappBaseUrl}${
-          whatsappBaseUrl.includes("?")
-            ? "&"
-            : "?"
-        }text=${encodeURIComponent(
-          whatsappMessage
-        )}`
-      : "";
+  const whatsappUrl = store?.whatsapp
+    ? `https://wa.me/${store.whatsapp}?text=${encodeURIComponent(
+        whatsappMessage
+      )}`
+    : "";
 
   return (
     <main className="min-h-screen bg-[#f8f5ef] text-[#1c1a17]">
-      {/* =================================================
+      {/* =====================================================
           PRODUCT
-      ================================================= */}
+      ===================================================== */}
 
-      <section className="mx-auto max-w-7xl px-6 py-12 md:py-20">
+      <section className="mx-auto max-w-7xl px-5 py-10 sm:px-8 md:py-16">
         {/* =================================================
             BREADCRUMB
         ================================================= */}
@@ -125,7 +158,7 @@ export default async function ProductPage({
             }
             className="transition hover:text-[#b08a3c]"
           >
-            {collection} Jewellery
+            {collection}
           </Link>
 
           <span>→</span>
@@ -141,7 +174,7 @@ export default async function ProductPage({
 
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
           {/* =================================================
-              IMAGE / VIDEO GALLERY
+              IMAGE / VIDEO
           ================================================= */}
 
           <div>
@@ -153,175 +186,94 @@ export default async function ProductPage({
           </div>
 
           {/* =================================================
-              PRODUCT INFORMATION
+              PRODUCT DETAILS
           ================================================= */}
 
           <div className="flex flex-col justify-center">
-            {/* Collection */}
+            <div className="rounded-3xl border border-[#dfd5c4] bg-white p-6 shadow-[0_10px_35px_rgba(80,60,30,0.05)] sm:p-8 md:p-9">
+              {/* =================================================
+                  PRODUCT NAME
+              ================================================= */}
 
-            <p className="text-sm uppercase tracking-[0.3em] text-[#b08a3c]">
-              {product.collection} Jewellery
-            </p>
-
-            {/* Product Name */}
-
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[#1c1a17] sm:text-5xl">
-              {product.name}
-            </h1>
-
-            {/* Category */}
-
-            {product.categoryName && (
-              <p className="mt-4 text-[#8a8174]">
-                {product.categoryName}
-              </p>
-            )}
-
-            {/* =================================================
-                PRODUCT DETAILS
-            ================================================= */}
-
-            <div className="mt-8 rounded-3xl border border-[#dfd5c4] bg-white p-6 shadow-[0_10px_35px_rgba(80,60,30,0.04)] sm:p-7 md:p-8">
-              {/* Heading */}
-
-              <div className="border-b border-[#eee5d7] pb-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#b08a3c]">
-                  Product Information
-                </p>
-
-                <h2 className="mt-2 text-2xl font-semibold text-[#1c1a17]">
-                  Product Details
-                </h2>
+              <div className="border-b border-[#eee5d7] pb-6">
+                <h1 className="text-4xl font-semibold leading-[1.05] tracking-tight text-[#1c1a17] sm:text-5xl md:text-6xl">
+                  {product.name}
+                </h1>
               </div>
 
-              {/* Details */}
+              {/* =================================================
+                  PURITY + TAG NUMBER
+              ================================================= */}
 
-              <div className="mt-6 space-y-6">
-                {/* Purity */}
-
+              <div className="grid gap-6 border-b border-[#eee5d7] py-6 sm:grid-cols-2">
                 {product.purity && (
                   <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-[#9b917f]">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9b917f]">
                       Purity
                     </p>
 
-                    <p className="mt-2 font-semibold text-[#1c1a17]">
+                    <p className="mt-2 text-base font-semibold text-[#1c1a17]">
                       {product.purity}
                     </p>
                   </div>
                 )}
 
-                {/* Description */}
-
-                {product.description && (
+                {product.tagNumber && (
                   <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-[#9b917f]">
-                      Description
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9b917f]">
+                      Tag Number
                     </p>
 
-                    <p className="mt-2 whitespace-pre-line leading-7 text-[#6f685e]">
-                      {product.description}
+                    <p className="mt-2 text-base font-semibold text-[#1c1a17]">
+                      {product.tagNumber}
                     </p>
                   </div>
                 )}
+              </div>
 
-                {/* =================================================
-                    GOLD DETAILS
-                ================================================= */}
+              {/* =================================================
+                  DESCRIPTION
+              ================================================= */}
 
-                {collection === "Gold" && (
-                  <>
-                    {/* HYD */}
+              {product.description && (
+                <div className="border-b border-[#eee5d7] py-6">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9b917f]">
+                    Description
+                  </p>
 
-                    {product.hyd && (
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-[#9b917f]">
-                          HYD
-                        </p>
+                  <p className="mt-3 whitespace-pre-line text-sm leading-7 text-[#6f685e] sm:text-base">
+                    {product.description}
+                  </p>
+                </div>
+              )}
 
-                        <p className="mt-2 font-semibold text-[#1c1a17]">
-                          {product.hyd}
-                        </p>
-                      </div>
-                    )}
+              {/* =================================================
+                  COMMON GLOBAL INFORMATION
+              ================================================= */}
 
-                    {/* Hallmark */}
+              <div className="space-y-4 pt-6">
+                {globalProductLines.map((line, index) => (
+                  <div
+                    key={`${line}-${index}`}
+                    className="flex items-start gap-3"
+                  >
+                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#b08d57] text-[11px] font-bold text-white">
+                      ✓
+                    </span>
 
-                    {product.hallmark && (
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-[#9b917f]">
-                          Hallmark
-                        </p>
-
-                        <p className="mt-2 font-semibold text-[#1c1a17]">
-                          {product.hallmark}
-                        </p>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* =================================================
-                    DIAMOND DETAILS
-                ================================================= */}
-
-                {collection === "Diamond" && (
-                  <>
-                    {/* IGI */}
-
-                    {product.igi && (
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-[#9b917f]">
-                          IGI
-                        </p>
-
-                        <p className="mt-2 font-semibold text-[#1c1a17]">
-                          {product.igi}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* SGL */}
-
-                    {product.sgl && (
-                      <div>
-                        <p className="text-xs uppercase tracking-[0.18em] text-[#9b917f]">
-                          SGL
-                        </p>
-
-                        <p className="mt-2 font-semibold text-[#1c1a17]">
-                          {product.sgl}
-                        </p>
-                      </div>
-                    )}
-                  </>
-                )}
+                    <p className="text-sm leading-6 text-[#4f4941]">
+                      {line}
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
-
-            {/* =================================================
-                DESCRIPTION
-            ================================================= */}
-
-            {product.description && (
-              <div className="mt-8">
-                <h2 className="text-lg font-semibold text-[#1c1a17]">
-                  Product Details
-                </h2>
-
-                <p className="mt-3 whitespace-pre-line leading-7 text-[#6f685e]">
-                  {product.description}
-                </p>
-              </div>
-            )}
 
             {/* =================================================
                 ACTIONS
             ================================================= */}
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              {/* WhatsApp */}
-
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               {whatsappUrl && (
                 <a
                   href={whatsappUrl}
@@ -333,12 +285,10 @@ export default async function ProductPage({
                 </a>
               )}
 
-              {/* Wishlist */}
+
 
               <div className="flex-1">
-                <WishlistButton
-                  product={product}
-                />
+                <WishlistButton product={product} />
               </div>
             </div>
           </div>
@@ -350,9 +300,9 @@ export default async function ProductPage({
       ===================================================== */}
 
       <section className="border-t border-[#dfd5c4] bg-[#eee8dc]">
-        <div className="mx-auto max-w-7xl px-6 py-16 md:py-20">
+        <div className="mx-auto max-w-7xl px-5 py-16 sm:px-8 md:py-20">
           <div className="mx-auto max-w-4xl">
-            {/* Heading */}
+
 
             <div className="text-center">
               <p className="text-sm uppercase tracking-[0.3em] text-[#b08a3c]">
@@ -364,9 +314,24 @@ export default async function ProductPage({
               </h2>
             </div>
 
-            {/* Store Card */}
+
 
             <div className="mt-10 rounded-3xl border border-[#dfd5c4] bg-white p-7 shadow-[0_15px_50px_rgba(80,60,30,0.06)] sm:p-9 md:p-10">
+              {store?.logo && (
+                <div className="mb-8 flex justify-center">
+                  <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border border-[#b08a3c]/30 bg-[#f8f5ef] p-4 shadow-sm sm:h-32 sm:w-32">
+                    <Image
+                      src={store.logo}
+                      alt={`${store.name || collection} logo`}
+                      width={128}
+                      height={128}
+                      unoptimized
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                </div>
+              )}
+
               <p className="text-sm uppercase tracking-[0.25em] text-[#b08a3c]">
                 {collection} Store
               </p>
@@ -382,10 +347,10 @@ export default async function ProductPage({
                 </p>
               )}
 
-              {/* Store Details */}
+
 
               <div className="mt-8 grid gap-6 sm:grid-cols-2">
-                {/* Address */}
+
 
                 <div>
                   <p className="text-xs uppercase tracking-wider text-[#9b917f]">
@@ -398,7 +363,7 @@ export default async function ProductPage({
                   </p>
                 </div>
 
-                {/* Phone */}
+
 
                 <div>
                   <p className="text-xs uppercase tracking-wider text-[#9b917f]">
@@ -420,35 +385,23 @@ export default async function ProductPage({
                 </div>
               </div>
 
-              {/* Store Actions */}
+
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                {/* WhatsApp Store */}
-
-                {store?.whatsappUrl ||
-                store?.whatsapp ? (
+                {store?.whatsapp && (
                   <a
-                    href={
-                      store.whatsappUrl ||
-                      `https://wa.me/${store.whatsapp
-                        .replace(/\D/g, "")
-                        .trim()}`
-                    }
+                    href={`https://wa.me/${store.whatsapp}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-1 rounded-xl bg-[#b08a3c] px-5 py-4 text-center text-sm font-semibold text-white transition hover:bg-[#98742f]"
                   >
                     WhatsApp Store
                   </a>
-                ) : null}
-
-                {/* Google Maps */}
+                )}
 
                 {store?.googleMapsUrl && (
                   <a
-                    href={
-                      store.googleMapsUrl
-                    }
+                    href={store.googleMapsUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-1 rounded-xl border border-[#b08a3c] px-5 py-4 text-center text-sm font-semibold text-[#9a762f] transition hover:bg-[#b08a3c] hover:text-white"
@@ -467,7 +420,7 @@ export default async function ProductPage({
       ===================================================== */}
 
       <section className="border-t border-[#dfd5c4] bg-[#f8f5ef]">
-        <div className="mx-auto max-w-7xl px-6 py-10 text-center">
+        <div className="mx-auto max-w-7xl px-5 py-10 text-center">
           <Link
             href={
               collection === "Gold"

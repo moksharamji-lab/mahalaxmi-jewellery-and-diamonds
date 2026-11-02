@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import type { Category } from "@/types/category";
@@ -13,9 +13,9 @@ export default function CategoryForm({
   category,
 }: Props) {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isEditing =
-    category !== undefined;
+  const isEditing = category !== undefined;
 
   /* =========================================================
      FORM STATE
@@ -34,14 +34,17 @@ export default function CategoryForm({
       category?.collection ?? "Gold"
     );
 
-  const [image, setImage] = useState(
-    category?.image ?? ""
-  );
+  const [selectedImage, setSelectedImage] =
+    useState<File | null>(null);
 
-  const [active, setActive] =
-    useState(
-      category?.active ?? true
+  const [previewUrl, setPreviewUrl] =
+    useState<string>(
+      category?.image ?? ""
     );
+
+  const [active, setActive] = useState(
+    category?.active ?? true
+  );
 
   /* =========================================================
      UI STATE
@@ -57,12 +60,25 @@ export default function CategoryForm({
     useState("");
 
   /* =========================================================
+     CLEANUP PREVIEW URL
+  ========================================================= */
+
+  useEffect(() => {
+    return () => {
+      if (
+        previewUrl &&
+        previewUrl.startsWith("blob:")
+      ) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
+  /* =========================================================
      SLUG GENERATOR
   ========================================================= */
 
-  function generateSlug(
-    value: string
-  ) {
+  function generateSlug(value: string) {
     return value
       .toLowerCase()
       .trim()
@@ -85,15 +101,84 @@ export default function CategoryForm({
   ) {
     setName(value);
 
-    /*
-     * Automatically generate the slug
-     * only while creating a new category.
-     */
     if (!isEditing) {
       setSlug(
         generateSlug(value)
       );
     }
+  }
+
+  /* =========================================================
+     IMAGE SELECT
+  ========================================================= */
+
+  function handleImageChange(
+    event: React.ChangeEvent<HTMLInputElement>
+  ) {
+    const file =
+      event.target.files?.[0] ?? null;
+
+    setError("");
+
+    if (!file) {
+      return;
+    }
+
+    const allowedTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+    ];
+
+    if (
+      !allowedTypes.includes(
+        file.type
+      )
+    ) {
+      setError(
+        "Please select a JPG, PNG, or WEBP image."
+      );
+
+      event.target.value = "";
+      return;
+    }
+
+    const maxSize =
+      10 * 1024 * 1024;
+
+    if (file.size > maxSize) {
+      setError(
+        "Image size must be 10 MB or less."
+      );
+
+      event.target.value = "";
+      return;
+    }
+
+    setSelectedImage(file);
+
+    const newPreviewUrl =
+      URL.createObjectURL(file);
+
+    setPreviewUrl(
+      newPreviewUrl
+    );
+  }
+
+  /* =========================================================
+     REMOVE SELECTED IMAGE
+  ========================================================= */
+
+  function handleRemoveSelectedImage() {
+    setSelectedImage(null);
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+
+    setPreviewUrl(
+      category?.image ?? ""
+    );
   }
 
   /* =========================================================
@@ -108,18 +193,11 @@ export default function CategoryForm({
     setError("");
     setSuccess("");
 
-    /* -------------------------------------------------------
-       VALIDATION
-    ------------------------------------------------------- */
-
     const cleanName =
       name.trim();
 
     const cleanSlug =
       slug.trim();
-
-    const cleanImage =
-      image.trim();
 
     const cleanCollection =
       collection.trim();
@@ -148,31 +226,13 @@ export default function CategoryForm({
     setIsSaving(true);
 
     try {
-      /* -----------------------------------------------------
-         API URL
-      ----------------------------------------------------- */
-
       const url = category
         ? `/api/admin/categories/${category.id}`
         : "/api/admin/categories";
 
-      /*
-       * IMPORTANT:
-       *
-       * CREATE  → POST
-       * UPDATE  → PATCH
-       *
-       * The API route at:
-       * /api/admin/[resource]/[id]
-       * exports PATCH, not PUT.
-       */
       const method = category
         ? "PATCH"
         : "POST";
-
-      /* -----------------------------------------------------
-         FORM DATA
-      ----------------------------------------------------- */
 
       const formData =
         new FormData();
@@ -193,36 +253,33 @@ export default function CategoryForm({
       );
 
       /*
-       * Keep the existing image field
-       * in the request.
+       * IMPORTANT:
        *
-       * The current category architecture
-       * uses driveImage separately when a
-       * Drive file is uploaded.
+       * If a new image is selected,
+       * send the actual File.
+       *
+       * The existing admin API already
+       * accepts "image" uploads and sends
+       * category images to the Categories
+       * Google Drive folder.
        */
-      formData.append(
-        "image",
-        cleanImage
-      );
+      if (selectedImage) {
+        formData.append(
+          "image",
+          selectedImage
+        );
+      }
 
       formData.append(
         "active",
         String(active)
       );
 
-      /* -----------------------------------------------------
-         REQUEST
-      ----------------------------------------------------- */
-
       const response =
         await fetch(url, {
           method,
           body: formData,
         });
-
-      /* -----------------------------------------------------
-         RESPONSE
-      ----------------------------------------------------- */
 
       const contentType =
         response.headers.get(
@@ -263,10 +320,6 @@ export default function CategoryForm({
         }
       }
 
-      /* -----------------------------------------------------
-         HANDLE ERROR
-      ----------------------------------------------------- */
-
       if (!response.ok) {
         throw new Error(
           data?.message ||
@@ -279,20 +332,12 @@ export default function CategoryForm({
         );
       }
 
-      /* -----------------------------------------------------
-         SUCCESS
-      ----------------------------------------------------- */
-
       setSuccess(
         category
           ? "Category updated successfully."
           : "Category created successfully."
       );
 
-      /*
-       * Give the user a moment to see
-       * the success message before redirecting.
-       */
       window.setTimeout(() => {
         router.push(
           "/admin/categories"
@@ -331,12 +376,9 @@ export default function CategoryForm({
 
       <div className="rounded-2xl border border-[#D8C9B5] bg-[#FAF6EE] p-6 shadow-[0_4px_18px_rgba(80,60,30,0.04)]">
 
-        {/* ---------------------------------------------------
-            HEADER
-        --------------------------------------------------- */}
+        {/* HEADER */}
 
         <div className="mb-6 border-b border-[#E3D7C5] pb-5">
-
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#A47C3A]">
             Category Details
           </p>
@@ -348,21 +390,13 @@ export default function CategoryForm({
           <p className="mt-1 text-sm text-[#6F665B]">
             Add the details for this jewellery category.
           </p>
-
         </div>
-
-        {/* ---------------------------------------------------
-            FIELDS
-        --------------------------------------------------- */}
 
         <div className="space-y-5">
 
-          {/* =================================================
-              CATEGORY NAME
-          ================================================= */}
+          {/* CATEGORY NAME */}
 
           <div>
-
             <label
               htmlFor="name"
               className="mb-2 block text-sm font-semibold text-[#40382F]"
@@ -385,15 +419,11 @@ export default function CategoryForm({
               required
               disabled={isSaving}
             />
-
           </div>
 
-          {/* =================================================
-              SLUG
-          ================================================= */}
+          {/* SLUG */}
 
           <div>
-
             <label
               htmlFor="slug"
               className="mb-2 block text-sm font-semibold text-[#40382F]"
@@ -420,15 +450,11 @@ export default function CategoryForm({
             <p className="mt-2 text-xs text-[#817668]">
               Used in the category URL.
             </p>
-
           </div>
 
-          {/* =================================================
-              COLLECTION
-          ================================================= */}
+          {/* COLLECTION */}
 
           <div>
-
             <label
               htmlFor="collection"
               className="mb-2 block text-sm font-semibold text-[#40382F]"
@@ -450,7 +476,6 @@ export default function CategoryForm({
               className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] px-4 py-3 text-sm text-[#302A23] outline-none transition focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
               disabled={isSaving}
             >
-
               <option value="Gold">
                 Gold
               </option>
@@ -458,48 +483,91 @@ export default function CategoryForm({
               <option value="Diamond">
                 Diamond
               </option>
-
             </select>
-
           </div>
 
           {/* =================================================
-              IMAGE URL
+              CATEGORY IMAGE UPLOAD
           ================================================= */}
 
-          <div>
+          <div className="rounded-2xl border border-[#D8C9B5] bg-[#F8F2E8] p-5">
 
-            <label
-              htmlFor="image"
-              className="mb-2 block text-sm font-semibold text-[#40382F]"
-            >
-              Image URL
-            </label>
+            <div className="mb-4">
+              <label className="block text-sm font-semibold text-[#40382F]">
+                Category Image
+              </label>
+
+              <p className="mt-1 text-xs text-[#817668]">
+                Upload a JPG, PNG, or WEBP image. Maximum 10 MB.
+              </p>
+            </div>
+
+            {/* PREVIEW */}
+
+            {previewUrl && (
+              <div className="mb-5 overflow-hidden rounded-xl border border-[#D0C1AC] bg-white">
+                <div className="relative aspect-[16/9] w-full bg-[#F1EBE1]">
+                  {/* Blob URLs are used while a local upload is pending. */}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={previewUrl}
+                    alt="Category preview"
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+
+                {selectedImage && (
+                  <div className="flex items-center justify-between border-t border-[#E3D7C5] px-4 py-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[#302A23]">
+                        {selectedImage.name}
+                      </p>
+
+                      <p className="mt-1 text-xs text-[#817668]">
+                        {(
+                          selectedImage.size /
+                          (1024 * 1024)
+                        ).toFixed(2)}{" "}
+                        MB
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={
+                        handleRemoveSelectedImage
+                      }
+                      disabled={isSaving}
+                      className="ml-4 rounded-lg border border-[#D5A3A0] bg-[#F7E9E7] px-3 py-2 text-xs font-semibold text-[#9A4F49] transition hover:bg-[#F2DDDA] disabled:opacity-50"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* FILE INPUT */}
 
             <input
-              id="image"
-              name="image"
-              type="url"
-              value={image}
-              onChange={(event) =>
-                setImage(
-                  event.target.value
-                )
+              ref={fileInputRef}
+              id="category-image"
+              name="category-image"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={
+                handleImageChange
               }
-              placeholder="https://example.com/image.jpg"
-              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] px-4 py-3 text-sm text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
               disabled={isSaving}
+              className="block w-full cursor-pointer rounded-xl border border-[#D0C1AC] bg-[#FAF6EE] text-sm text-[#40382F] file:mr-4 file:cursor-pointer file:border-0 file:border-r file:border-[#D0C1AC] file:bg-[#EDE3D3] file:px-5 file:py-3 file:font-semibold file:text-[#5A4B3A] hover:file:bg-[#E4D7C5]"
             />
 
             <p className="mt-2 text-xs text-[#817668]">
-              Optional category image URL.
+              Select an image from your computer.
             </p>
-
           </div>
 
-          {/* =================================================
-              ACTIVE
-          ================================================= */}
+          {/* ACTIVE */}
 
           <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#E3D7C5] bg-[#F8F2E8] p-4 transition hover:border-[#B08D57]/50">
 
@@ -516,7 +584,6 @@ export default function CategoryForm({
             />
 
             <span>
-
               <span className="block text-sm font-semibold text-[#40382F]">
                 Active
               </span>
@@ -524,18 +591,12 @@ export default function CategoryForm({
               <span className="mt-1 block text-xs text-[#817668]">
                 Show this category on the public website.
               </span>
-
             </span>
-
           </label>
-
         </div>
-
       </div>
 
-      {/* =====================================================
-          ERROR MESSAGE
-      ===================================================== */}
+      {/* ERROR */}
 
       {error && (
         <div
@@ -546,9 +607,7 @@ export default function CategoryForm({
         </div>
       )}
 
-      {/* =====================================================
-          SUCCESS MESSAGE
-      ===================================================== */}
+      {/* SUCCESS */}
 
       {success && (
         <div
@@ -559,13 +618,9 @@ export default function CategoryForm({
         </div>
       )}
 
-      {/* =====================================================
-          BUTTONS
-      ===================================================== */}
+      {/* BUTTONS */}
 
       <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-
-        {/* CANCEL */}
 
         <button
           type="button"
@@ -580,8 +635,6 @@ export default function CategoryForm({
           Cancel
         </button>
 
-        {/* SAVE */}
-
         <button
           type="submit"
           disabled={isSaving}
@@ -593,9 +646,7 @@ export default function CategoryForm({
               ? "Update Category"
               : "Create Category"}
         </button>
-
       </div>
-
     </form>
   );
 }

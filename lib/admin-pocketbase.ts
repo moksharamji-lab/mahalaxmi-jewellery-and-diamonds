@@ -58,7 +58,6 @@ export async function getAuthenticatedAdminClient() {
     return {
       account,
       user,
-      refreshedToken: token,
     };
   } catch {
     return null;

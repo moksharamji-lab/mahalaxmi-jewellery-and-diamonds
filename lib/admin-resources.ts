@@ -6,6 +6,8 @@ const adminResources = {
   rates: "Rates",
   "hero-slides": "HeroSliders",
   "our-story": "OurStory",
+  "product-settings": "ProductSettings",
+  gallery: "Gallery",
   enquiries: "Enquiries",
 } as const;
 

@@ -19,10 +19,16 @@ export default function WishlistPageClient() {
      ========================================================= */
 
   useEffect(() => {
-    const savedWishlist = getWishlist();
+    const timer = window.setTimeout(() => {
+      const savedWishlist = getWishlist();
 
-    setProducts(savedWishlist);
-    setIsLoaded(true);
+      setProducts(savedWishlist);
+      setIsLoaded(true);
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, []);
 
   /* =========================================================
@@ -106,7 +112,7 @@ export default function WishlistPageClient() {
         <div className="rounded-3xl border border-[#dfd5c4] bg-white px-6 py-20 text-center shadow-[0_15px_50px_rgba(80,60,30,0.06)]">
 
           <div className="text-6xl font-light text-[#b08a3c]">
-            ♡
+            💛
           </div>
 
           <h2 className="mt-6 text-2xl font-semibold text-[#1c1a17]">
@@ -122,14 +128,14 @@ export default function WishlistPageClient() {
 
             <Link
               href="/gold"
-              className="rounded-xl bg-[#b08a3c] px-6 py-4 text-center font-semibold text-white transition hover:bg-[#98742f]"
+              className="rounded-xl bg-[#b08a3c] px-6 py-4 text-center font-semibold  text-[#9a762f] transition hover:bg-[#98742f]"
             >
               Explore Gold
             </Link>
 
             <Link
               href="/diamond"
-              className="rounded-xl border border-[#b08a3c] px-6 py-4 text-center font-semibold text-[#9a762f] transition hover:bg-[#b08a3c] hover:text-white"
+               className="rounded-xl bg-[#b08a3c] px-6 py-4 text-center font-semibold  text-[#9a762f] transition hover:bg-[#98742f]"
             >
               Explore Diamonds
             </Link>

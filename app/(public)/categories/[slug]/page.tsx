@@ -1,352 +1,540 @@
+import Image from "next/image";
 import Link from "next/link";
 
-import HeroSlider from "@/components/public/HeroSlider";
-import { getHeroSlides } from "@/services/hero-slide.service";
-import { getCategories } from "@/services/category.service";
-import { getProducts } from "@/services/product.service";
+import {
+  getCategories,
+  type Category,
+} from "@/services/category.service";
 
-import type { HeroSlide } from "@/types/hero-slide";
-import type { Product } from "@/types/product";
+import {
+  getProducts,
+} from "@/services/product.service";
 
-type Props = {
+type Collection = "Gold" | "Diamond";
+
+type Product = Awaited<ReturnType<typeof getProducts>>[number];
+
+type PageProps = {
   params: Promise<{
     slug: string;
   }>;
+  searchParams: Promise<{
+    collection?: string;
+  }>;
 };
+
+function getProductHref(product: Product) {
+  const slug = product.slug?.trim();
+
+  if (slug) {
+    return `/products/${encodeURIComponent(slug)}`;
+  }
+
+  return `/products/${product.id}`;
+}
+
+function getProductImage(product: Product) {
+  if (
+    Array.isArray(product.imageUrls) &&
+    product.imageUrls.length > 0
+  ) {
+    return product.imageUrls[0];
+  }
+
+  return "";
+}
+
+function dedupeProducts(products: Product[]) {
+  const seen = new Set<string>();
+  const result: Product[] = [];
+
+  for (const product of products) {
+    const key = product.id?.trim();
+
+    if (!key || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    result.push(product);
+  }
+
+  return result;
+}
 
 export default async function CategoryPage({
   params,
-}: Props) {
+  searchParams,
+}: PageProps) {
   const { slug } = await params;
+  const query = await searchParams;
 
-  const categories = await getCategories();
+  const cleanSlug = slug.trim().toLowerCase();
 
-  const category = categories.find(
-    (item) =>
-      item.slug === slug &&
-      item.active
-  );
+  let categories: Category[] = [];
 
-  if (!category) {
+  try {
+    categories = await getCategories();
+  } catch (error) {
+    console.error(
+      "[CategoryPage] Failed to load categories:",
+      error
+    );
+  }
+
+  /*
+   * Keep all matching category records.
+   *
+   * This allows the same category name/slug to work
+   * with both Gold and Diamond products.
+   */
+  const matchingCategories = categories.filter((category) => {
+    const categorySlug =
+      category.slug?.trim().toLowerCase();
+
     return (
-      <main className="min-h-screen bg-[#f8f5ef] px-5 py-24">
-        <div className="mx-auto max-w-5xl text-center">
-          <p className="text-sm uppercase tracking-[0.25em] text-[#b08d57]">
-            Category Not Found
+      category.active &&
+      categorySlug === cleanSlug
+    );
+  });
+
+  if (matchingCategories.length === 0) {
+    return (
+      <main className="min-h-screen bg-[#faf9f6]">
+        <section className="mx-auto flex min-h-[70vh] max-w-7xl flex-col items-center justify-center px-6 text-center">
+          <p className="mb-3 text-xs font-medium uppercase tracking-[0.35em] text-neutral-500">
+            Category
           </p>
 
-          <h1 className="mt-4 font-display text-5xl text-[#1c1a17]">
+          <h1 className="font-serif text-4xl text-neutral-900 md:text-5xl">
             Category Not Found
           </h1>
 
-          <p className="mx-auto mt-6 max-w-xl text-[#777169]">
-            The jewellery category you are looking for
-            could not be found or is currently inactive.
+          <p className="mt-4 max-w-lg text-sm leading-7 text-neutral-600">
+            The category you are looking for is not available.
           </p>
 
           <Link
             href="/categories"
-            className="mt-8 inline-flex min-h-[52px] items-center justify-center bg-[#b08d57] px-8 text-xs font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#8f6f3f]"
+            className="mt-8 inline-flex rounded-full border border-neutral-900 bg-neutral-900 px-7 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-neutral-800"
           >
             Back to Categories
           </Link>
-        </div>
+        </section>
       </main>
     );
   }
 
-  /* =========================================================
-     CATEGORY HERO SLIDES
-  ========================================================= */
+  const categoryName =
+    matchingCategories[0]?.name?.trim() || "Category";
 
-  let heroSlides: HeroSlide[] = [];
+  /*
+   * We intentionally DO NOT use category.collection.
+   *
+   * Instead, we check the Products table directly for
+   * Gold and Diamond products belonging to this category.
+   */
+  let goldProducts: Product[] = [];
+  let diamondProducts: Product[] = [];
 
-  try {
-    const slides = await getHeroSlides();
+  for (const category of matchingCategories) {
+    try {
+      const gold = await getProducts({
+        category: category.id,
+        collection: "Gold",
+        active: true,
+      });
 
-    heroSlides = slides
-      .filter(
-        (slide) =>
-          slide.active &&
-          slide.page === "Categories" &&
-          (slide.imageUrl || slide.videoUrl)
-      )
-      .sort(
-        (a, b) =>
-          a.order - b.order
+      goldProducts.push(...gold);
+    } catch (error) {
+      console.error(
+        `[CategoryPage] Failed to load Gold products for category ${category.id}:`,
+        error
       );
-  } catch (error) {
-    console.error(
-      "Failed to load category hero slides:",
-      error
-    );
+    }
+
+    try {
+      const diamond = await getProducts({
+        category: category.id,
+        collection: "Diamond",
+        active: true,
+      });
+
+      diamondProducts.push(...diamond);
+    } catch (error) {
+      console.error(
+        `[CategoryPage] Failed to load Diamond products for category ${category.id}:`,
+        error
+      );
+    }
   }
 
-  /* =========================================================
-     CATEGORY PRODUCTS
-  ========================================================= */
+  goldProducts = dedupeProducts(goldProducts);
+  diamondProducts = dedupeProducts(diamondProducts);
 
-  let products: Product[] = [];
+  const hasGold = goldProducts.length > 0;
+  const hasDiamond = diamondProducts.length > 0;
 
-  try {
-    products = await getProducts({
-      category: category.id,
-      active: true,
-    });
-  } catch (error) {
-    console.error(
-      `Failed to load products for category ${category.name}:`,
-      error
-    );
-  }
+  const requestedCollection =
+    query.collection?.trim().toLowerCase();
+
+  const selectedCollection: Collection | null =
+    requestedCollection === "gold"
+      ? "Gold"
+      : requestedCollection === "diamond"
+        ? "Diamond"
+        : null;
+
+  const selectedProducts =
+    selectedCollection === "Gold"
+      ? goldProducts
+      : selectedCollection === "Diamond"
+        ? diamondProducts
+        : [];
+
+  const currentCategorySlug =
+    matchingCategories[0]?.slug?.trim() || cleanSlug;
+
+  const encodedCategorySlug =
+    encodeURIComponent(currentCategorySlug);
+
+  const goldUrl =
+    `/categories/${encodedCategorySlug}?collection=Gold`;
+
+  const diamondUrl =
+    `/categories/${encodedCategorySlug}?collection=Diamond`;
 
   return (
-    <main className="min-h-screen bg-[#f8f5ef]">
-      {/* =====================================================
-          HERO
-      ===================================================== */}
+    <main className="min-h-screen bg-[#faf9f6]">
 
-      <HeroSlider
-        slides={heroSlides}
-      />
+      {/* CATEGORY HEADER */}
+      <section className="border-b border-neutral-200 bg-white">
+        <div className="mx-auto max-w-7xl px-6 py-14 text-center md:px-10 md:py-20">
 
-      {/* =====================================================
-          CATEGORY HEADER
-      ===================================================== */}
+          <Link
+            href="/categories"
+            className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.22em] text-neutral-500 transition hover:text-neutral-900"
+          >
+            <span>←</span>
+            <span>All Categories</span>
+          </Link>
 
-      <section className="border-b border-[#e5ded2] bg-[#f8f5ef]">
-        <div className="mx-auto max-w-[1400px] px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
-          <div className="mx-auto max-w-4xl text-center">
-            <div className="flex items-center justify-center gap-3 sm:gap-4">
-              <span className="h-px w-8 bg-[#b08d57] sm:w-14" />
+          <p className="mt-8 text-xs font-medium uppercase tracking-[0.4em] text-neutral-500">
+            Explore Collection
+          </p>
 
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#b08d57] sm:text-xs sm:tracking-[0.4em]">
-                Jewellery Collection
-              </p>
+          <h1 className="mt-4 font-serif text-4xl font-medium tracking-tight text-neutral-900 md:text-6xl">
+            {categoryName}
+          </h1>
 
-              <span className="h-px w-8 bg-[#b08d57] sm:w-14" />
-            </div>
+          <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-neutral-600 md:text-base">
+            Discover our {categoryName.toLowerCase()} collection
+            across Gold and Diamond jewellery.
+          </p>
 
-            <h1 className="mt-7 font-display text-5xl font-normal leading-[1.05] tracking-[-0.03em] text-[#1c1a17] sm:text-6xl md:text-7xl">
-              {category.name}
-            </h1>
-
-            {category.description && (
-              <p className="mx-auto mt-7 max-w-2xl text-sm leading-7 text-[#777169] sm:text-base sm:leading-8">
-                {category.description}
-              </p>
-            )}
-          </div>
         </div>
       </section>
 
-      {/* =====================================================
-          PRODUCTS
-      ===================================================== */}
+      {/* COLLECTION SELECTION */}
+      {!selectedCollection && (
+        <section className="bg-[#faf9f6] px-6 py-14 md:px-10 md:py-20">
+          <div className="mx-auto max-w-5xl">
 
-      <section className="bg-white">
-        <div className="mx-auto max-w-[1400px] px-5 py-16 sm:px-8 sm:py-20 lg:px-10">
-          <div className="mb-10 flex flex-col gap-3 border-b border-[#e5ded2] pb-5 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-[#b08d57] sm:text-xs sm:tracking-[0.4em]">
-                Collection
+            <div className="text-center">
+              <p className="text-xs font-medium uppercase tracking-[0.35em] text-neutral-500">
+                Choose Collection
               </p>
 
-              <h2 className="mt-2 font-display text-3xl font-normal text-[#1c1a17] sm:text-4xl">
-                {category.name}
+              <h2 className="mt-3 font-serif text-3xl text-neutral-900 md:text-4xl">
+                Shop {categoryName}
               </h2>
             </div>
 
-            <p className="text-[10px] uppercase tracking-[0.18em] text-[#918a81] sm:text-xs">
-              {products.length}{" "}
-              {products.length === 1
-                ? "Piece"
-                : "Pieces"}
-            </p>
-          </div>
+            <div
+              className={`mt-10 grid gap-6 ${
+                hasGold && hasDiamond
+                  ? "md:grid-cols-2"
+                  : "mx-auto max-w-xl"
+              }`}
+            >
 
-          {products.length === 0 ? (
-            <div className="border border-[#e5ded2] bg-[#f8f5ef] px-6 py-24 text-center">
-              <div className="text-3xl text-[#b08d57]">
-                ◇
+              {/* GOLD */}
+              {hasGold && (
+                <Link
+                  href={goldUrl}
+                  className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-8 text-center shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl md:p-12"
+                >
+                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-neutral-300 bg-[#faf9f6] transition group-hover:border-neutral-900">
+                    <span className="font-serif text-2xl text-neutral-900">
+                      G
+                    </span>
+                  </div>
+
+                  <p className="mt-7 text-xs font-medium uppercase tracking-[0.35em] text-neutral-500">
+                    Explore
+                  </p>
+
+                  <h3 className="mt-2 font-serif text-3xl text-neutral-900">
+                    Gold
+                  </h3>
+
+                  <p className="mx-auto mt-4 max-w-sm text-sm leading-6 text-neutral-600">
+                    Explore our handcrafted gold jewellery
+                    collection.
+                  </p>
+
+                  <span className="mt-7 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-900">
+                    View Gold
+
+                    <span className="transition-transform group-hover:translate-x-1">
+                      →
+                    </span>
+                  </span>
+                </Link>
+              )}
+
+              {/* DIAMOND */}
+              {hasDiamond && (
+                <Link
+                  href={diamondUrl}
+                  className="group relative overflow-hidden rounded-2xl border border-neutral-200 bg-white p-8 text-center shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl md:p-12"
+                >
+                  <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-neutral-300 bg-[#faf9f6] transition group-hover:border-neutral-900">
+                    <span className="font-serif text-2xl text-neutral-900">
+                      D
+                    </span>
+                  </div>
+
+                  <p className="mt-7 text-xs font-medium uppercase tracking-[0.35em] text-neutral-500">
+                    Explore
+                  </p>
+
+                  <h3 className="mt-2 font-serif text-3xl text-neutral-900">
+                    Diamond
+                  </h3>
+
+                  <p className="mx-auto mt-4 max-w-sm text-sm leading-6 text-neutral-600">
+                    Discover our elegant diamond jewellery
+                    collection.
+                  </p>
+
+                  <span className="mt-7 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-neutral-900">
+                    View Diamond
+
+                    <span className="transition-transform group-hover:translate-x-1">
+                      →
+                    </span>
+                  </span>
+                </Link>
+              )}
+
+            </div>
+
+            {!hasGold && !hasDiamond && (
+              <div className="mt-10 rounded-2xl border border-neutral-200 bg-white px-6 py-14 text-center">
+                <h3 className="font-serif text-2xl text-neutral-900">
+                  Coming Soon
+                </h3>
+
+                <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-neutral-600">
+                  Products for this category are currently
+                  unavailable.
+                </p>
+              </div>
+            )}
+
+          </div>
+        </section>
+      )}
+
+      {/* SELECTED COLLECTION PRODUCTS */}
+      {selectedCollection && (
+        <section className="bg-[#faf9f6] px-6 py-12 md:px-10 md:py-16">
+          <div className="mx-auto max-w-7xl">
+
+            {/* TOP BAR */}
+            <div className="flex flex-col gap-5 border-b border-neutral-200 pb-7 md:flex-row md:items-center md:justify-between">
+
+              <div>
+                <Link
+                  href={`/categories/${encodedCategorySlug}`}
+                  className="inline-flex items-center gap-2 text-xs font-medium uppercase tracking-[0.2em] text-neutral-500 transition hover:text-neutral-900"
+                >
+                  <span>←</span>
+                  <span>Choose Collection</span>
+                </Link>
+
+                <h2 className="mt-4 font-serif text-3xl text-neutral-900 md:text-4xl">
+                  {selectedCollection} {categoryName}
+                </h2>
               </div>
 
-              <h3 className="mt-5 font-display text-2xl font-normal text-[#1c1a17] sm:text-3xl">
-                Collection Coming Soon
-              </h3>
+              {/* COLLECTION SWITCH */}
+              <div className="flex flex-wrap gap-3">
 
-              <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-[#777169]">
-                We are currently adding beautiful
-                pieces to this collection. Please
-                check back soon.
-              </p>
+                {hasGold && (
+                  <Link
+                    href={goldUrl}
+                    className={`rounded-full border px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] transition ${
+                      selectedCollection === "Gold"
+                        ? "border-[#c9a227] bg-[#c9a227] text-[#1a1402] hover:bg-[#c9a227] hover:text-white"
+                        : "border-[#c9a227] bg-[#fcc605] text-[#151414] hover:bg-[#c9a227] hover:text-white"
+                    }`}
+                  >
+                    Gold
+                  </Link>
+                )}
 
-              <Link
-                href="/categories"
-                className="mt-8 inline-flex min-h-[48px] items-center justify-center bg-[#b08d57] px-7 text-[10px] font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:bg-[#8f6f3f] sm:text-xs"
-              >
-                Browse Categories
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
-              {products.map(
-                (product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                  />
-                )
-              )}
-            </div>
-          )}
-        </div>
-      </section>
+                {hasDiamond && (
+                  <Link
+                    href={diamondUrl}
+                    className={`rounded-full border px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.16em] transition ${
+                      selectedCollection === "Diamond"
+                        ? "border-[#c9a227] bg-[#c9a227] text-[#1a1402] hover:bg-[#c9a227] hover:text-white"
+                        : "border-[#c9a227] bg-[#f5c105] text-[#080701] hover:bg-[#c9a227] hover:text-white"
+                    }`}
+                  >
+                    Diamond
+                  </Link>
+                )}
 
-      {/* =====================================================
-          COLLECTION NAVIGATION
-      ===================================================== */}
-
-      <section className="border-t border-[#e5ded2] bg-[#f8f5ef]">
-        <div className="mx-auto max-w-[1400px] px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="flex items-center justify-center gap-3">
-              <span className="h-px w-10 bg-[#e5ded2]" />
-
-              <span className="text-sm text-[#d6b878]">
-                ✦
-              </span>
-
-              <span className="h-px w-10 bg-[#e5ded2]" />
+              </div>
             </div>
 
-            <h2 className="mt-7 font-display text-4xl font-normal tracking-[-0.02em] text-[#1c1a17] sm:text-5xl">
-              Explore More
-            </h2>
+            {/* PRODUCTS */}
+            {selectedProducts.length > 0 ? (
+              <div className="mt-10 grid grid-cols-2 gap-x-4 gap-y-10 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 md:gap-x-6">
 
-            <p className="mx-auto mt-5 max-w-2xl text-sm leading-7 text-[#777169] sm:text-base sm:leading-8">
-              Discover more jewellery from our Gold
-              and Diamond collections.
-            </p>
+                {selectedProducts.map((product) => {
+                  const image = getProductImage(product);
 
-            <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
-              <Link
-                href="/gold"
-                className="inline-flex min-h-[52px] items-center justify-center bg-[#b08d57] px-8 text-xs font-semibold uppercase tracking-[0.18em] text-white transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#8f6f3f]"
-              >
-                Gold Collection
-              </Link>
+                  return (
+                    <Link
+                      key={product.id}
+                      href={getProductHref(product)}
+                      className="group"
+                    >
+                      <article>
 
-              <Link
-                href="/diamond"
-                className="inline-flex min-h-[52px] items-center justify-center border border-[#b08d57] bg-transparent px-8 text-xs font-semibold uppercase tracking-[0.18em] text-[#8f6f3f] transition-all duration-300 hover:bg-[#b08d57] hover:text-white"
-              >
-                Diamond Collection
-              </Link>
-            </div>
+                        {/* PRODUCT IMAGE */}
+                        <div className="relative aspect-4/5 overflow-hidden rounded-xl bg-white">
+
+                          {image ? (
+                            <Image
+                              src={image}
+                              alt={product.name}
+                              fill
+                              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                              unoptimized
+                              className="object-cover transition duration-700 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center bg-neutral-100">
+                              <span className="font-serif text-2xl text-neutral-400">
+                                {selectedCollection}
+                              </span>
+                            </div>
+                          )}
+
+                          {/* COLLECTION BADGE */}
+                          <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1.5 backdrop-blur">
+                            <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-neutral-800">
+                              {selectedCollection}
+                            </span>
+                          </div>
+
+                        </div>
+
+                        {/* PRODUCT INFO */}
+                        <div className="px-1 pt-4">
+
+                          <h3 className="font-serif text-base text-neutral-900 transition group-hover:text-neutral-600 md:text-lg">
+                            {product.name}
+                          </h3>
+
+                          {product.purity && (
+                            <p className="mt-1.5 text-xs uppercase tracking-[0.14em] text-neutral-500">
+                              {product.purity}
+                            </p>
+                          )}
+
+                          {product.description && (
+                            <p className="mt-2 line-clamp-2 text-xs leading-5 text-neutral-500">
+                              {product.description}
+                            </p>
+                          )}
+
+                          <span className="mt-3 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-800">
+                            View Product
+
+                            <span className="transition-transform group-hover:translate-x-1">
+                              →
+                            </span>
+                          </span>
+
+                        </div>
+
+                      </article>
+                    </Link>
+                  );
+                })}
+
+              </div>
+            ) : (
+              <div className="mt-12 rounded-2xl border border-neutral-200 bg-white px-6 py-16 text-center">
+
+                <h3 className="font-serif text-2xl text-neutral-900">
+                  No Products Available
+                </h3>
+
+                <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-neutral-600">
+                  There are currently no active{" "}
+                  {selectedCollection.toLowerCase()} products
+                  in this category.
+                </p>
+
+                <Link
+                  href={`/categories/${encodedCategorySlug}`}
+                  className="mt-7 inline-flex rounded-full border border-neutral-900 bg-neutral-900 px-6 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-neutral-800"
+                >
+                  Back to Collection
+                </Link>
+
+              </div>
+            )}
+
           </div>
+        </section>
+      )}
+
+      {/* BOTTOM CTA */}
+      <section className="border-t border-neutral-200 bg-white px-6 py-16 md:px-10 md:py-20">
+        <div className="mx-auto max-w-3xl text-center">
+
+          <p className="text-xs font-medium uppercase tracking-[0.35em] text-neutral-500">
+            Mahalaxmi Jewellers & Diamonds
+          </p>
+
+          <h2 className="mt-4 font-serif text-3xl text-neutral-900 md:text-4xl">
+            Explore More Jewellery
+          </h2>
+
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-7 text-neutral-600">
+            Discover more categories and find a piece that
+            speaks to you.
+          </p>
+
+          <Link
+            href="/categories"
+            className="mt-8 inline-flex rounded-full border border-neutral-900 bg-neutral-900 px-7 py-3 text-xs font-semibold uppercase tracking-[0.18em] text-white transition hover:bg-neutral-800"
+          >
+            Browse All Categories
+          </Link>
+
         </div>
       </section>
+
     </main>
   );
-}
 
-/* =========================================================
-   PRODUCT CARD
-========================================================= */
-
-function ProductCard({
-  product,
-}: {
-  product: Product;
-}) {
-  const imageUrl =
-    product.imageUrls?.[0] ||
-    product.imageUrl ||
-    "";
-
-  const productHref =
-    `/products/${product.slug || product.id}`;
-
-  return (
-    <Link
-      href={productHref}
-      className="group block"
-    >
-      <div className="relative overflow-hidden border border-[#e5ded2] bg-[#f1ece3]">
-        <div className="aspect-square overflow-hidden">
-          {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={product.name}
-              className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center">
-              <span className="text-4xl text-[#b08d57]">
-                ◇
-              </span>
-            </div>
-          )}
-        </div>
-
-        {product.featured && (
-          <div className="absolute left-3 top-3 bg-[#b08d57] px-3 py-1.5 text-[8px] font-semibold uppercase tracking-[0.16em] text-white">
-            Featured
-          </div>
-        )}
-      </div>
-
-      <div className="px-1 pt-4">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#b08d57]">
-          {product.categoryName ||
-            categoryLabel(product.collection)}
-        </p>
-
-        <h3 className="mt-2 line-clamp-2 font-display text-lg font-normal leading-tight text-[#1c1a17] transition-colors duration-300 group-hover:text-[#b08d57] sm:text-xl">
-          {product.name}
-        </h3>
-
-        {product.purity && (
-          <p className="mt-2 text-[10px] uppercase tracking-[0.12em] text-[#777169]">
-            {product.purity}
-          </p>
-        )}
-
-        <div className="mt-3 flex items-center gap-2 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#1c1a17] transition-colors duration-300 group-hover:text-[#b08d57] sm:text-[10px]">
-          <span>
-            View Details
-          </span>
-
-          <span className="transition-transform duration-300 group-hover:translate-x-1">
-            →
-          </span>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-/* =========================================================
-   COLLECTION LABEL
-========================================================= */
-
-function categoryLabel(
-  collection?: string
-): string {
-  if (
-    collection?.toLowerCase() ===
-    "diamond"
-  ) {
-    return "Diamond Jewellery";
-  }
-
-  if (
-    collection?.toLowerCase() ===
-    "gold"
-  ) {
-    return "Gold Jewellery";
-  }
-
-  return "Jewellery";
 }

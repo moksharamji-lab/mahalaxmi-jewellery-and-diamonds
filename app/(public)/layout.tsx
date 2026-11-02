@@ -1,206 +1,139 @@
-import type { ReactNode } from "react";
-import Link from "next/link";
 
-import RatesTicker from "@/components/public/RatesTicker";
+import type { ReactNode } from "react";
+
 import PublicNavbar from "@/components/public/PublicNavbar";
+import RatesTicker from "@/components/public/RatesTicker";
+
+type Props = {
+  children: ReactNode;
+};
+
+function SocialButton({
+  children,
+  href,
+}: {
+  children: ReactNode;
+  href: string;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex min-h-10.5 items-center justify-center rounded-full border border-[#66583f] px-5 text-[11px] font-medium tracking-[0.04em] text-[#e6dccb] transition-colors duration-300 hover:border-[#d6b878] hover:text-[#d6b878]"
+    >
+      {children}
+    </a>
+  );
+}
 
 export default function PublicLayout({
   children,
-}: {
-  children: ReactNode;
-}) {
+}: Props) {
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* =====================================================
-          GOLD RATES TICKER
-      ===================================================== */}
+    <div className="min-h-screen bg-[#f8f5ef] text-[#1c1a17]">
 
+      {/* RATES TICKER */}
       <RatesTicker />
 
-      {/* =====================================================
-          NAVBAR
-      ===================================================== */}
-
+      {/* NAVBAR */}
       <PublicNavbar />
 
-      {/* =====================================================
-          PAGE CONTENT
-      ===================================================== */}
+      {/* PAGE CONTENT */}
+      <div>{children}</div>
 
-      <main>{children}</main>
+      {/* FOOTER */}
+      <footer className="border-t border-[#3a342c] bg-[#211e1a] text-[#e6dccb]">
 
-      {/* =====================================================
-          FOOTER
-      ===================================================== */}
+        <div className="mx-auto max-w-375 px-6 py-16 sm:px-8 lg:px-10">
 
-      <footer className="border-t border-zinc-800 bg-black">
-        <div className="mx-auto max-w-7xl px-6 py-14">
+          {/* THREE COLUMN FOOTER */}
+          <div className="grid gap-12 md:grid-cols-3 md:gap-8 lg:gap-14">
 
-          {/* Footer Grid */}
+            {/* COMPANY */}
+            <div className="flex flex-col justify-center md:pr-8">
 
-          <div className="grid gap-10 md:grid-cols-3">
+              <h2 className="font-display text-4xl font-normal leading-none tracking-[0.16em] text-[#d6b878] sm:text-5xl">
+                MAHALAXMI
+              </h2>
 
-            {/* =================================================
-                BRAND
-            ================================================= */}
-
-            <div>
-              <Link
-                href="/"
-                className="inline-flex flex-col"
-              >
-                <span className="text-2xl font-semibold tracking-[0.18em] text-yellow-500">
-                  MAHALAXMI
-                </span>
-
-                <span className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">
-                  JEWELLERS AND DIAMONDS
-                </span>
-              </Link>
-
-              <p className="mt-5 max-w-sm leading-7 text-zinc-500">
-                A trusted destination for exquisite gold and
-                diamond jewellery, bringing together two
-                specialised stores under one name.
+              <p className="mt-4 text-[12px] font-semibold uppercase leading-6 tracking-[0.28em] text-[#f5eee2] sm:text-[13px]">
+                JEWELLERS AND DIAMONDS
+                <br />
+                (SINCE - 1996)
               </p>
+
             </div>
 
-            {/* =================================================
-                QUICK LINKS
-            ================================================= */}
+            {/* GOLD STORE */}
+            <div className="md:border-l md:border-[#4a4237] md:pl-8">
 
-            <div>
-              <h3 className="text-lg font-semibold text-white">
-                Quick Links
+              <h3 className="text-xl font-semibold uppercase tracking-[0.18em] text-[#d6b878]">
+                GOLD STORE
               </h3>
 
-              <div className="mt-5 flex flex-col gap-3 text-sm">
+              <div className="mt-6 flex flex-wrap gap-3">
 
-                <Link
-                  href="/"
-                  className="text-zinc-400 transition hover:text-yellow-500"
-                >
-                  Home
-                </Link>
+                <SocialButton href="https://www.instagram.com/mahalaxmi_jewellery_916?dlrf=OXIxcmtlamZqODcx">
+                  Instagram
+                </SocialButton>
 
-                <Link
-                  href="/gold"
-                  className="text-zinc-400 transition hover:text-yellow-500"
-                >
-                  Gold Jewellery
-                </Link>
-
-                <Link
-                  href="/diamond"
-                  className="text-zinc-400 transition hover:text-yellow-500"
-                >
-                  Diamond Jewellery
-                </Link>
-
-                <Link
-                  href="/categories"
-                  className="text-zinc-400 transition hover:text-yellow-500"
-                >
-                  Categories
-                </Link>
-
-                <Link
-                  href="/wishlist"
-                  className="text-zinc-400 transition hover:text-yellow-500"
-                >
-                  Wishlist
-                </Link>
-
-                <Link
-                  href="/contact"
-                  className="text-zinc-400 transition hover:text-yellow-500"
-                >
-                  Contact
-                </Link>
-
-              </div>
-            </div>
-
-            {/* =================================================
-                STORES
-            ================================================= */}
-
-            <div>
-              <h3 className="text-lg font-semibold text-white">
-                Visit Our Stores
-              </h3>
-
-              <div className="mt-5 space-y-5 text-sm">
-
-                <div>
-                  <p className="font-semibold text-zinc-300">
-                    Gold Store
-                  </p>
-
-                  <Link
-                    href="/gold"
-                    className="mt-1 inline-block text-zinc-500 transition hover:text-yellow-500"
-                  >
-                    Explore Gold Jewellery →
-                  </Link>
-                </div>
-
-                <div>
-                  <p className="font-semibold text-zinc-300">
-                    Diamond Store
-                  </p>
-
-                  <Link
-                    href="/diamond"
-                    className="mt-1 inline-block text-zinc-500 transition hover:text-yellow-500"
-                  >
-                    Explore Diamond Jewellery →
-                  </Link>
-                </div>
+                <SocialButton href="https://www.facebook.com/share/1DfZfnjmZa/">
+                  Facebook
+                </SocialButton>
 
               </div>
 
-              <Link
-                href="/contact"
-                className="mt-6 inline-block text-sm font-medium text-yellow-500 transition hover:text-yellow-400"
-              >
-                Get Store Details →
-              </Link>
+            </div>
+
+            {/* DIAMOND STORE */}
+            <div className="md:border-l md:border-[#4a4237] md:pl-8">
+
+              <h3 className="text-xl font-semibold uppercase tracking-[0.18em] text-[#d6b878]">
+                DIAMOND STORE
+              </h3>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+
+                <SocialButton href="https://www.instagram.com/mahalaxmi_jewels_diamonds?xtok=ZnRya2lmbms1Mmgy">
+                  Instagram
+                </SocialButton>
+
+                <SocialButton href="https://www.facebook.com/share/1CBGE3Chij/">
+                  Facebook
+                </SocialButton>
+
+                <SocialButton href="https://youtube.com/@mahalaxmijewelsanddiamonds?si=PIz6FCxPJUhGqIVx">
+                  YouTube
+                </SocialButton>
+
+              </div>
+
             </div>
 
           </div>
 
-          {/* =====================================================
-              COPYRIGHT
-          ===================================================== */}
+          {/* DIVIDER */}
+          <div className="mt-14 border-t border-[#4a4237]" />
 
-          <div className="mt-12 border-t border-zinc-800 pt-6">
+          {/* COPYRIGHT */}
+          <div className="pt-7 text-center">
 
-            <div className="flex flex-col gap-3 text-center text-sm sm:flex-row sm:items-center sm:justify-between sm:text-left">
+            <p className="text-[12px] leading-6 text-[#a99e8e] sm:text-[13px]">
+              © {new Date().getFullYear()} Mahalaxmi Jewellers and
+              Diamonds. All rights reserved.
+            </p>
 
-              <p className="text-zinc-600">
-                © {new Date().getFullYear()} MAHALAXMI JEWELLERS AND DIAMONDS. All rights reserved.
-              </p>
-
-              <p className="text-zinc-600">
-                Website Designed & Developed by{" "}
-
-                <a
-                  href="https://adsparkcom.lovable.app/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-medium text-yellow-500 transition hover:text-yellow-400"
-                >
-                  AdSpark Technologies
-                </a>
-              </p>
-
-            </div>
+            <p className="mt-2 text-[11px] tracking-[0.04em] text-[#817668]">
+              Website by AdSpark Technologies
+            </p>
 
           </div>
 
         </div>
+
       </footer>
+
     </div>
   );
 }
