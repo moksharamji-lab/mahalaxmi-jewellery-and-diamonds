@@ -100,19 +100,8 @@ export async function getPublicMediaFolderIds() {
 
     if (folder?.id) {
       folderIds.push(folder.id);
-    } else {
-      console.warn(
-        "PUBLIC_MEDIA_FOLDER_NOT_FOUND:",
-        folderName
-      );
     }
   }
-
-  console.log("PUBLIC_MEDIA_FOLDERS_DIAGNOSTIC", {
-    folderCount: folderIds.length,
-    folderNames,
-    folderIds,
-  });
 
   return folderIds;
 }
@@ -132,34 +121,21 @@ export async function isPublicMediaFile(
   const file = metadata.data;
 
   if (!file.id || file.trashed) {
-    console.warn(
-      "MEDIA_FILE_MISSING_OR_TRASHED:",
-      fileId
-    );
-
     return false;
   }
 
   const allowedFolderIds =
     await getPublicMediaFolderIds();
 
+  if (allowedFolderIds.length === 0) {
+    return false;
+  }
+
   const parents = file.parents ?? [];
 
-  const isAllowed = parents.some(
-    (parentId) =>
-      allowedFolderIds.includes(parentId)
+  return parents.some((parentId) =>
+    allowedFolderIds.includes(parentId)
   );
-
-  console.log("MEDIA_FOLDER_DIAGNOSTIC", {
-    fileId,
-    fileName: file.name,
-    mimeType: file.mimeType,
-    parentIds: parents,
-    allowedFolderIds,
-    isAllowed,
-  });
-
-  return isAllowed;
 }
 
 /* =====================================================
