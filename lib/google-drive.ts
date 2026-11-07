@@ -111,6 +111,7 @@ export async function getPublicMediaFolderIds() {
     "Hero",
     "Categories",
     "Gallery",
+     "OurStory",
   ];
 
   const folderIds: string[] = [];
