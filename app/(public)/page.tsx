@@ -307,6 +307,8 @@ export default async function HomePage() {
         </div>
       </section>
 
+      
+   
       {/* =================================================
           OUR STORY
       ================================================= */}
@@ -328,14 +330,16 @@ export default async function HomePage() {
 
             <div className="grid items-center gap-14 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20 xl:gap-28">
 
-              <div className="relative min-h-[620px] sm:min-h-[700px] lg:min-h-[760px]">
+              {/* IMAGE COLLAGE */}
+              <div className="relative min-h-[560px] sm:min-h-[620px] lg:min-h-[680px]">
 
                 <div
                   aria-hidden="true"
                   className="absolute left-3 top-3 h-[calc(100%-6px)] w-[calc(100%-6px)] border border-[#b08d57]/35"
                 />
 
-                <div className="absolute left-0 top-0 h-[540px] w-[70%] overflow-hidden bg-[#ddd3c4] shadow-[0_24px_70px_rgba(40,32,24,0.14)] sm:h-[620px] lg:h-[680px]">
+                {/* MAIN IMAGE */}
+                <div className="absolute left-0 top-0 h-[440px] w-[68%] overflow-hidden bg-[#ddd3c4] shadow-[0_24px_70px_rgba(40,32,24,0.14)] sm:h-[520px] lg:h-[600px]">
 
                   {storyImageOne ? (
                     <Image
@@ -347,7 +351,7 @@ export default async function HomePage() {
                       className="object-cover transition duration-1000 hover:scale-[1.025]"
                     />
                   ) : (
-                    <div className="flex h-[540px] items-center justify-center bg-[#ddd3c4] sm:h-[620px] lg:h-[680px]">
+                    <div className="flex h-full items-center justify-center bg-[#ddd3c4]">
                       <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#8f8579]">
                         Our Story
                       </span>
@@ -356,7 +360,8 @@ export default async function HomePage() {
 
                 </div>
 
-                <div className="absolute bottom-0 right-0 z-10 h-[350px] w-[48%] overflow-hidden border-[10px] border-[#eee7dc] bg-[#ddd3c4] shadow-[0_24px_60px_rgba(40,32,24,0.18)] sm:h-[430px] sm:border-[14px] lg:h-[470px]">
+                {/* SECOND IMAGE */}
+                <div className="absolute bottom-8 right-0 z-10 h-[280px] w-[44%] overflow-hidden border-[10px] border-[#eee7dc] bg-[#ddd3c4] shadow-[0_24px_60px_rgba(40,32,24,0.18)] sm:bottom-10 sm:h-[350px] sm:w-[45%] sm:border-[14px] lg:bottom-12 lg:h-[400px] lg:w-[44%]">
 
                   {storyImageTwo ? (
                     <Image
@@ -368,7 +373,7 @@ export default async function HomePage() {
                       className="object-cover transition duration-1000 hover:scale-[1.025]"
                     />
                   ) : (
-                    <div className="flex h-[350px] items-center justify-center bg-[#ddd3c4] sm:h-[430px] lg:h-[470px]">
+                    <div className="flex h-full items-center justify-center bg-[#ddd3c4]">
                       <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#8f8579]">
                         Timeless Elegance
                       </span>
@@ -377,7 +382,8 @@ export default async function HomePage() {
 
                 </div>
 
-                <div className="absolute bottom-8 left-[52%] z-20 flex h-24 w-24 -translate-x-1/2 flex-col items-center justify-center rounded-full border border-[#b08d57]/50 bg-[#eee7dc]/95 text-center shadow-[0_10px_35px_rgba(40,32,24,0.12)] backdrop-blur-sm sm:bottom-10 sm:h-28 sm:w-28">
+                {/* ESTABLISHED BADGE */}
+                <div className="absolute bottom-14 left-[54%] z-20 flex h-20 w-20 -translate-x-1/2 flex-col items-center justify-center rounded-full border border-[#b08d57]/50 bg-[#eee7dc]/95 text-center shadow-[0_10px_35px_rgba(40,32,24,0.12)] backdrop-blur-sm sm:bottom-16 sm:h-24 sm:w-24">
 
                   <span className="text-[8px] font-semibold uppercase tracking-[0.25em] text-[#9b7947]">
                     Est.
@@ -391,6 +397,7 @@ export default async function HomePage() {
 
               </div>
 
+              {/* STORY CONTENT */}
               <div className="relative lg:pl-2 xl:pl-8">
 
                 <div className="mb-8 flex items-center gap-4">
@@ -457,9 +464,10 @@ export default async function HomePage() {
             </div>
 
           </div>
-
         </section>
       )}
+
+
 
       {/* =================================================
           GOOGLE REVIEWS
