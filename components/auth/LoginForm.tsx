@@ -1,6 +1,9 @@
+
 "use client";
 
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+
 type Props = {
   nextPath: string;
 };
@@ -10,10 +13,9 @@ type LoginResponse = {
 };
 
 export default function LoginForm({ nextPath }: Props) {
- 
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -82,6 +84,7 @@ export default function LoginForm({ nextPath }: Props) {
       </div>
 
       <div className="space-y-4">
+        {/* EMAIL */}
         <div>
           <label
             className="mb-2 block text-sm font-semibold text-[#40382F]"
@@ -102,6 +105,7 @@ export default function LoginForm({ nextPath }: Props) {
           />
         </div>
 
+        {/* PASSWORD */}
         <div>
           <label
             className="mb-2 block text-sm font-semibold text-[#40382F]"
@@ -110,19 +114,36 @@ export default function LoginForm({ nextPath }: Props) {
             Password
           </label>
 
-          <input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
-            placeholder="Enter your password"
-            required
-          />
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 pr-12 text-[#302A23] outline-none transition placeholder:text-[#8A7F70] focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
+              placeholder="Enter your password"
+              required
+            />
+
+            <button
+              type="button"
+              onClick={() => setShowPassword((previous) => !previous)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+              aria-pressed={showPassword}
+              className="absolute inset-y-0 right-0 flex items-center justify-center px-4 text-[#8A7F70] transition hover:text-[#B08D57] focus:outline-none"
+            >
+              {showPassword ? (
+                <EyeOff size={20} />
+              ) : (
+                <Eye size={20} />
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* ERROR MESSAGE */}
       {error && (
         <p
           role="alert"
@@ -132,6 +153,7 @@ export default function LoginForm({ nextPath }: Props) {
         </p>
       )}
 
+      {/* SIGN IN */}
       <button
         type="submit"
         disabled={isSubmitting}
