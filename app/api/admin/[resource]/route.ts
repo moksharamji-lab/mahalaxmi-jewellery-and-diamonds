@@ -1690,12 +1690,12 @@ case "Products": {
     data.collectionId = collectionId;
   }
 
+ 
   if (driveImageIds.length > 0) {
-    data.driveImages = driveImageIds;
-
-    data.image =
-      `/api/media/${driveImageIds[0]}`;
+    // Save Google Drive IDs in Appwrite array attribute
+  data.driveImages = driveImageIds;
   }
+
 
   if (driveVideoId) {
     data.driveVideo = driveVideoId;
