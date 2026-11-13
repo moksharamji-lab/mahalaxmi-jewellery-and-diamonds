@@ -51,6 +51,7 @@ export default async function GoldPage({
     params.featured === "true";
 
   let products: Product[] = [];
+  let availableProducts: Product[] = [];
   let categories: Category[] = [];
   let store: Store | null = null;
 
@@ -76,7 +77,22 @@ export default async function GoldPage({
       error
     );
   }
+/* =====================================================
+   LOAD ALL AVAILABLE GOLD PRODUCTS
+   Used only to determine which categories have products.
+===================================================== */
 
+try {
+  availableProducts = await getProducts({
+    collection: "Gold",
+    active: true,
+  });
+} catch (error) {
+  console.error(
+    "Failed to load available Gold products:",
+    error
+  );
+}
   /*
    * =====================================================
    * LOAD CATEGORIES
@@ -107,17 +123,22 @@ export default async function GoldPage({
     );
   }
 
-  /*
-   * =====================================================
-   * ACTIVE GOLD CATEGORIES
-   * =====================================================
-   */
+  /* =====================================================
+   ACTIVE GOLD CATEGORIES WITH AVAILABLE PRODUCTS
+===================================================== */
 
-  const activeCategories = categories.filter(
-    (item) =>
-      item.active &&
-      item.collection === "Gold"
-  );
+const availableGoldCategoryIds = new Set(
+  availableProducts
+    .map((product) => product.category)
+    .filter(Boolean)
+);
+
+const activeCategories = categories.filter(
+  (item) =>
+    item.active &&
+    item.collection === "Gold" &&
+    availableGoldCategoryIds.has(item.id)
+);
 
   /*
    * =====================================================

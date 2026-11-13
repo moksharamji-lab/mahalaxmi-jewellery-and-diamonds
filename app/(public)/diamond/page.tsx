@@ -52,10 +52,26 @@ export default async function DiamondPage({
   const featured =
     params.featured === "true";
 
-  let products: Product[] = [];
-  let categories: Category[] = [];
-  let store: Store | null = null;
+   let products: Product[] = [];
+let availableProducts: Product[] = [];
+let categories: Category[] = [];
+let store: Store | null = null;
 
+/* =====================================================
+   LOAD ALL AVAILABLE DIAMOND PRODUCTS
+===================================================== */
+
+try {
+  availableProducts = await getProducts({
+    collection: "Diamond",
+    active: true,
+  });
+} catch (error) {
+  console.error(
+    "Failed to load available Diamond products:",
+    error
+  );
+}
 
   /*
    * =====================================================
@@ -113,19 +129,22 @@ export default async function DiamondPage({
     );
   }
 
-  /*
-   * =====================================================
-   * ACTIVE DIAMOND CATEGORIES
-   * =====================================================
-   */
+  /* =====================================================
+   ACTIVE DIAMOND CATEGORIES WITH AVAILABLE PRODUCTS
+===================================================== */
 
-  const activeCategories =
-    categories.filter(
+const availableDiamondCategoryIds = new Set(
+  availableProducts
+    .map((product) => product.category)
+    .filter(Boolean)
+);
 
-      (item) =>
-        item.active &&
-        item.collection === "Diamond"
-    );
+const activeCategories = categories.filter(
+  (item) =>
+    item.active &&
+    item.collection === "Diamond" &&
+    availableDiamondCategoryIds.has(item.id)
+);
 
   /*
    * =====================================================
