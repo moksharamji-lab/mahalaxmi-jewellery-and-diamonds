@@ -789,7 +789,6 @@ async function buildAppwriteData(
         "buttonText",
         "buttonLink",
         "page",
-        "mediaType",
       ];
 
       for (
@@ -829,16 +828,50 @@ async function buildAppwriteData(
         data.order = order;
       }
 
-      if (
-        driveImageIds.length > 0
-      ) {
-        data.driveImage =
-          driveImageIds[0];
-      }
+      const mediaType =
+        formValue(
+          formData,
+          "mediaType"
+        );
 
-      if (driveVideoId) {
-        data.driveVideo =
-          driveVideoId;
+      if (mediaType !== undefined) {
+        const selectedMediaType =
+          mediaType === "video"
+            ? "video"
+            : "image";
+
+        data.mediaType =
+          selectedMediaType;
+
+        if (selectedMediaType === "image") {
+          /* Clear a previous video while retaining the current image when
+             this is a text-only edit. */
+          data.driveVideo = "";
+
+          if (driveImageIds.length > 0) {
+            data.driveImage =
+              driveImageIds[0];
+          }
+        } else {
+          /* Clear a previous image while retaining the current video when
+             this is a text-only edit. */
+          data.driveImage = "";
+
+          if (driveVideoId) {
+            data.driveVideo =
+              driveVideoId;
+          }
+        }
+      } else {
+        if (driveImageIds.length > 0) {
+          data.driveImage =
+            driveImageIds[0];
+        }
+
+        if (driveVideoId) {
+          data.driveVideo =
+            driveVideoId;
+        }
       }
 
       break;
@@ -1189,15 +1222,25 @@ export async function PATCH(
     let driveVideoId = "";
 
     if (driveFolderName) {
+      const isHeroVideo =
+        collection === "HeroSliders" &&
+        formValue(
+          originalFormData,
+          "mediaType"
+        ) === "video";
+
       const imageFiles =
-        originalFormData.getAll(
-          "images"
-        );
+        isHeroVideo
+          ? []
+          : originalFormData.getAll(
+              "images"
+            );
 
       const singleImage =
         originalFormData.get("image");
 
       if (
+        !isHeroVideo &&
         imageFiles.length === 0 &&
         singleImage instanceof File
       ) {
@@ -1235,9 +1278,12 @@ export async function PATCH(
       }
 
       const videoItem =
-        originalFormData.get(
-          "video"
-        );
+        collection === "HeroSliders" &&
+        !isHeroVideo
+          ? null
+          : originalFormData.get(
+              "video"
+            );
 
       if (
         videoItem instanceof File &&

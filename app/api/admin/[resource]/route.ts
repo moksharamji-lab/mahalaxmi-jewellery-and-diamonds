@@ -1542,47 +1542,34 @@ async function buildAppwriteData(
 
 
 
-      if (
-        mediaType !==
-        undefined
-      ) {
+      const selectedMediaType =
+        mediaType === "video"
+          ? "video"
+          : "image";
 
+      if (mediaType !== undefined) {
         data.mediaType =
-          mediaType;
-
+          selectedMediaType;
       }
 
-
-
+      /*
+       * HeroSlider rows store Google Drive file IDs only. Public URLs are
+       * derived later by hero-slide.service.ts through /api/media/[fileId].
+       */
       if (
-        driveImageIds.length >
-        0
+        selectedMediaType === "image" &&
+        driveImageIds.length > 0
       ) {
-
-        data.image =
-          `/api/media/${driveImageIds[0]}`;
-
-        data.imageUrl =
-          `/api/media/${driveImageIds[0]}`;
-
         data.driveImage =
           driveImageIds[0];
-
       }
 
-
-
-      if (driveVideoId) {
-
-        data.video =
-          `/api/media/${driveVideoId}`;
-
-        data.videoUrl =
-          `/api/media/${driveVideoId}`;
-
+      if (
+        selectedMediaType === "video" &&
+        driveVideoId
+      ) {
         data.driveVideo =
           driveVideoId;
-
       }
 
 
@@ -2235,11 +2222,20 @@ case "Gallery": {
 
 
 
+      const isHeroVideo =
+        resource === "HeroSliders" &&
+        formValue(
+          formData,
+          "mediaType"
+        ) === "video";
+
       const imageFiles =
-        formData.getAll(
-          "images"
-        )
-          .filter(isFile);
+        isHeroVideo
+          ? []
+          : formData.getAll(
+              "images"
+            )
+              .filter(isFile);
 
 
 
@@ -2251,8 +2247,8 @@ case "Gallery": {
 
 
       if (
-        imageFiles.length ===
-        0 &&
+        !isHeroVideo &&
+        imageFiles.length === 0 &&
         isFile(singleImage)
       ) {
 
@@ -2317,9 +2313,12 @@ case "Gallery": {
 
 
       const videoFile =
-        formData.get(
-          "video"
-        );
+        resource === "HeroSliders" &&
+        !isHeroVideo
+          ? null
+          : formData.get(
+              "video"
+            );
 
 
 

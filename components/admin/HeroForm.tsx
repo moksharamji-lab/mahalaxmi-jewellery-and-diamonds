@@ -63,6 +63,27 @@ export default function HeroForm({ initialData }: Props) {
     }
   }
 
+  function handleMediaTypeChange(
+    mediaType: "image" | "video"
+  ) {
+    if (mediaType === "image") {
+      setVideo(null);
+    } else {
+      if (imagePreviewUrl.current) {
+        URL.revokeObjectURL(imagePreviewUrl.current);
+        imagePreviewUrl.current = "";
+      }
+
+      setImage(null);
+      setImagePreview("");
+    }
+
+    setForm({
+      ...form,
+      mediaType,
+    });
+  }
+
   async function handleSubmit(
     e: React.FormEvent<HTMLFormElement>
   ) {
@@ -88,11 +109,11 @@ export default function HeroForm({ initialData }: Props) {
        * The admin API expects uploaded images under "images".
        * Do not change this back to "image".
        */
-      if (image) {
+      if (form.mediaType === "image" && image) {
         formData.append("images", image);
       }
 
-      if (video) {
+      if (form.mediaType === "video" && video) {
         formData.append("video", video);
       }
 
@@ -200,11 +221,9 @@ export default function HeroForm({ initialData }: Props) {
           id="hero-media-type"
           value={form.mediaType}
           onChange={(e) =>
-            setForm({
-              ...form,
-              mediaType:
-                e.target.value as "image" | "video",
-            })
+            handleMediaTypeChange(
+              e.target.value as "image" | "video"
+            )
           }
           className="w-full rounded-xl border border-[#D0C1AC] bg-[#F8F2E8] p-3 text-sm text-[#302A23] outline-none transition focus:border-[#B08D57] focus:ring-2 focus:ring-[#B08D57]/15"
         >
