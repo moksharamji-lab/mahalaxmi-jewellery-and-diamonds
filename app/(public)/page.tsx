@@ -18,6 +18,12 @@ import type { OurStory } from "@/types/our-story";
 
 import HeroSlider from "@/components/public/HeroSlider";
 
+/*
+ * Homepage content is managed in Appwrite. Render dynamically so newly
+ * published hero slides are fetched without requiring a new deployment.
+ */
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   let stores: Store[] = [];
   let newestProducts: Product[] = [];
